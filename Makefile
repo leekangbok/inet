@@ -32,7 +32,7 @@ CC                    = $(CXX)
 EXTRA_CFLAGS           =
 
 # The extra linker options, e.g. "-lmysqlclient -lz"
-EXTRA_LDFLAGS          = -lpthread -luv
+EXTRA_LDFLAGS          = -lpthread -luv -ljansson
 
 # Specify the include dirs, e.g. "-I/usr/include/mysql -I./include -I/usr/include -I/usr/local/include".
 INCLUDE                = -I. -Iinclude
