@@ -7,54 +7,160 @@
 #include <i_mem.h>
 #include <i_net.h>
 
-typedef struct tmpclient_ {
-	iserver_t *iserver;
-	uv_tcp_t tcp;
-	int fd;
-} tmpclient_t;
-
-static void close_cb(uv_handle_t *handle)
+static void on_channel_close(uv_handle_t *handle)
 {
-	tmpclient_t *client = icontainer_of(handle, tmpclient_t, tcp);
+	ichannel_t *channel = icontainer_of(handle, ichannel_t, h);
 
-	notify_new_connection(client->iserver, client->fd);
-	ifree(client);
+	channel->refcnt--;
+	printf("on_channel_close - refcnt: %d\n", channel->refcnt);
+
+	if (channel->refcnt <= 0)
+		destroy_channel(channel);
 }
 
-static void on_connect_client(uv_stream_t *server, int status)
+static void on_channel_idle_timer_close(uv_handle_t *handle)
 {
-	iserver_t *iserver = icontainer_of(server, iserver_t, h);
-	tmpclient_t *client = imalloc(sizeof(tmpclient_t));
+	ichannel_t *channel = icontainer_of(handle, ichannel_t, idle_timer_handle);
+
+	channel->refcnt--;
+	printf("on_channel_idle_timer_close - refcnt: %d\n", channel->refcnt);
+
+	if (channel->refcnt <= 0)
+		destroy_channel(channel);
+}
+
+static void on_channel_shutdown(uv_shutdown_t *req, int status)
+{
+	ichannel_t *channel = icontainer_of(req, ichannel_t, shutdown_handle);
+
+	if (status < 0) {
+		printf("on_channel_shutdown error: %d\n", status);
+		return;
+	}
+
+	uv_read_stop(&channel->h.stream);
+	uv_timer_stop(&channel->idle_timer_handle);
+
+	if (!uv_is_closing(&channel->h.handle)) {
+		uv_close(&channel->h.handle, on_channel_close);
+	}
+	if (!uv_is_closing((uv_handle_t *)&channel->idle_timer_handle)) {
+		uv_close((uv_handle_t *)&channel->idle_timer_handle,
+				 on_channel_idle_timer_close);
+	}
+}
+
+static void channel_shutdown(ichannel_t *channel)
+{
+	uv_shutdown(&channel->shutdown_handle, &channel->h.stream,
+				on_channel_shutdown);
+}
+
+static void channel_idle_timer_expire(uv_timer_t *handle)
+{
+	channel_shutdown(icontainer_of(handle, ichannel_t, idle_timer_handle));
+}
+
+static void channel_idle_timer_reset(ichannel_t *channel)
+{
+	assert(0 == uv_timer_start(&channel->idle_timer_handle,
+							   channel_idle_timer_expire,
+							   channel->server->config.idle_timeout * 1000,
+							   0));
+}
+
+static void origin_conn_closed(uv_handle_t *handle)
+{
+	async_cmd_t *cmd = icontainer_of(handle, async_cmd_t, new_connection.tcp);
+
+	cmd->cmd = ACMD_NEW_TCP_CONN;
+	notify_async_cmd(cmd);
+}
+
+static void on_connect_client(uv_stream_t *stream, int status)
+{
+	iserver_t *server = icontainer_of(stream, iserver_t, h);
+	async_cmd_t *cmd = imalloc(sizeof(async_cmd_t));
 	uv_os_fd_t client_fd;
 
-	assert(0 == uv_tcp_init(iserver->uvloop, &client->tcp));
-	assert(0 == uv_accept(server, (uv_stream_t *)&client->tcp));
+	assert(0 == uv_tcp_init(server->uvloop, &cmd->new_connection.tcp));
+	assert(0 == uv_accept(stream, (uv_stream_t *)&cmd->new_connection.tcp));
 
-	uv_fileno((uv_handle_t *)&client->tcp, &client_fd);
-	client->fd = dup(client_fd);
-	client->iserver = iserver;
+	uv_fileno((uv_handle_t *)&cmd->new_connection.tcp, &client_fd);
+	cmd->new_connection.fd = dup(client_fd);
+	cmd->new_connection.server = server;
 
-	uv_close((uv_handle_t *)&client->tcp, close_cb);
+	uv_close((uv_handle_t *)&cmd->new_connection.tcp, origin_conn_closed);
 }
 
-int setup_tcp_server(iserver_t *iserver, uv_loop_t *uvloop)
+static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)
 {
-	iserver->uvloop = uvloop;
-	iserver->data = NULL;
-	assert(0 == uv_ip4_addr(iserver->config.bindaddr,
-							iserver->config.bindport, &iserver->addr.addr4));
-	assert(0 == uv_tcp_init(uvloop, &iserver->h.tcp));
-	assert(0 == uv_tcp_bind(&iserver->h.tcp, &iserver->addr.addr, 0));
+	ichannel_t *channel = icontainer_of(stream, ichannel_t, h);
 
-	if (iserver->config.setup_iserver)
-		iserver->config.setup_iserver(iserver);
-	if (iserver->config.setup_uvhandle)
-		iserver->config.setup_uvhandle(&iserver->h.handle, "TCPServerBind");
+	if (datalen > 0) {
+		/* idle timer reset */
+		channel_idle_timer_reset(channel);
+		fire_pipeline_event(channel, IEVENT_READ, buf->base, datalen);
+		return;
+	}
+	if (datalen == UV_EOF) {
+	}
+	if (datalen < 0) {
+	}
 
-	assert(0 == uv_listen(&iserver->h.stream, 128, on_connect_client));
+	channel_shutdown(channel);
+	ifree(buf->base);
+}
 
-	printf("%s iserver(%p) listening on %s:%d\n",
-		   iserver->config.name, iserver,
-		   iserver->config.bindaddr, iserver->config.bindport);
+int setup_tcp_read(uv_loop_t *uvloop, iserver_worker_t *me,
+				   iserver_t *server, int fd)
+{
+	ichannel_t *channel = create_channel(NULL, NULL);
+
+	printf("new connection %lu, %d, %s\n", me->thread_id,
+		   fd,
+		   server->config.name);
+
+	assert(0 == uv_tcp_init(uvloop, &channel->h.tcp));
+	assert(0 == uv_tcp_open(&channel->h.tcp, fd));
+
+	channel->server = server;
+	channel->uvloop = uvloop;
+
+	channel->refcnt = 2;
+
+	server->config.setup_channel(channel);
+
+	uv_timer_init(uvloop, &channel->idle_timer_handle);
+	channel_idle_timer_reset(channel);
+
+	ll_add_tail(&channel->ll, &server->channels);
+
+	fire_pipeline_event(channel, IEVENT_ACTIVE, NULL, 0);
+
+	uv_read_start(&channel->h.stream, uvbuf_alloc, on_data);
+
+	return 1;
+}
+
+int setup_tcp_server(iserver_t *server, uv_loop_t *uvloop)
+{
+	server->uvloop = uvloop;
+	server->data = NULL;
+	assert(0 == uv_ip4_addr(server->config.bindaddr,
+							server->config.bindport, &server->addr.addr4));
+	assert(0 == uv_tcp_init(uvloop, &server->h.tcp));
+	assert(0 == uv_tcp_bind(&server->h.tcp, &server->addr.addr, 0));
+
+	if (server->config.setup_server)
+		server->config.setup_server(server);
+	if (server->config.setup_uvhandle)
+		server->config.setup_uvhandle(&server->h.handle, "TCPServerBind");
+
+	assert(0 == uv_listen(&server->h.stream, 128, on_connect_client));
+
+	printf("%s server(%p) listening on %s:%d\n",
+		   server->config.name, server,
+		   server->config.bindaddr, server->config.bindport);
 	return 1;
 }

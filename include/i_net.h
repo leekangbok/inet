@@ -24,8 +24,34 @@ typedef struct iserver_worker_ iserver_worker_t;
 
 typedef icode_t (*channelhandler_f)(ichannel_t *channel,
 									ichannelhandler_ctx_t *ctx,
-									void **data);
-typedef void (*data_destroy_f)(void **data);
+									void *data, ssize_t datalen);
+typedef icode_t (*call_later)(void *data);
+typedef void (*data_destroy_f)(void *data);
+
+typedef struct {
+} calllater_t;
+
+#define ACMD_NEW_TCP_CONN 1
+
+typedef struct {
+	struct ll_head ll;
+	int cmd;
+	union {
+		struct {
+			iserver_t *server;
+			uv_tcp_t tcp;
+			int fd;
+		} new_connection;
+	};
+} async_cmd_t;
+
+struct iserver_worker_ {
+	int index;
+	pthread_spinlock_t cmd_spinlock;
+	struct ll_head new_cmds;
+	uv_async_t cmd_handle;
+	uv_thread_t thread_id;
+};
 
 #define IHANDLER_NAME_MAX 32
 
@@ -63,9 +89,19 @@ struct ichannelpipeline_ {
 struct ichannel_ {
 	struct ll_head ll;
 	ichannelpipeline_t pipeline;
+	union {
+		uv_handle_t handle;
+		uv_stream_t stream;
+		uv_tcp_t tcp;
+		uv_udp_t udp;
+	} h;
+	int refcnt;
+	uv_timer_t idle_timer_handle;
+	uv_shutdown_t shutdown_handle;
 	void *data;
 	data_destroy_f data_destroy;
-	iserver_t *iserver;
+	uv_loop_t *uvloop;
+	iserver_t *server;
 };
 
 struct iserver_config_ {
@@ -75,15 +111,15 @@ struct iserver_config_ {
 	int bindport;
 	int idle_timeout;
 #define MAXSIGNUM 64
-	void (*signals_cb[MAXSIGNUM])(iserver_t *iserver, int signum);
-	void (*setup_iserver)(iserver_t *iserver);
+	void (*signals_cb[MAXSIGNUM])(iserver_t *server, int signum);
+	void (*setup_server)(iserver_t *server);
 	void (*setup_uvhandle)(uv_handle_t *handle, const char *what);
-	void (*setup_ichannel)(ichannel_t *ichannel);
+	void (*setup_channel)(ichannel_t *channel);
 };
 
 struct iserver_ {
 	struct ll_head ll;
-	struct ll_head ichannels;
+	struct ll_head channels;
 	union {
 		uv_handle_t handle;
 		uv_stream_t stream;
@@ -96,12 +132,18 @@ struct iserver_ {
 		struct sockaddr_in6 addr6;
 	} addr;
 	iserver_config_t config;
-	int (*setup_iserver)(iserver_t *iserver, uv_loop_t *uvloop);
+	int (*setup_server)(iserver_t *server, uv_loop_t *uvloop);
 	uv_loop_t *uvloop;
 	void *data;
 };
 
-icode_t fire_event(ichannel_t *channel, int ihandler_type, void **data);
+void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
+				 uv_buf_t *buf);
+void notify_async_cmd(async_cmd_t *cmd);
+icode_t fire_pipeline_event(ichannel_t *channel, int ihandler_type,
+							void *data, ssize_t datalen);
+icode_t fire_ctx_event(ichannelhandler_ctx_t *ctx,
+					   int event, void *data, ssize_t datalen);
 icode_t add_channelhandler(ichannel_t *channel, const char *name,
 						   channelhandler_f active,
 						   channelhandler_f read,
@@ -112,6 +154,7 @@ icode_t add_channelhandler(ichannel_t *channel, const char *name,
 						   channelhandler_f error_complete,
 						   void *data, data_destroy_f data_destroy);
 ichannel_t *create_channel(void *data, data_destroy_f data_destroy);
+void destroy_channel(ichannel_t *channel);
 icode_t add_iserver(iserver_config_t *config);
 icode_t start_iserver(void);
 
