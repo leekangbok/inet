@@ -6,13 +6,14 @@
 
 #include <i_mem.h>
 #include <i_net.h>
+#include <i_print.h>
 
 static void on_channel_close(uv_handle_t *handle)
 {
 	ichannel_t *channel = icontainer_of(handle, ichannel_t, h);
 
 	channel->refcnt--;
-	printf("on_channel_close - refcnt: %d\n", channel->refcnt);
+	prlog(LOGD, "on_channel_close - refcnt: %d", channel->refcnt);
 
 	if (channel->refcnt <= 0)
 		destroy_channel(channel);
@@ -23,7 +24,7 @@ static void on_channel_idle_timer_close(uv_handle_t *handle)
 	ichannel_t *channel = icontainer_of(handle, ichannel_t, idle_timer_handle);
 
 	channel->refcnt--;
-	printf("on_channel_idle_timer_close - refcnt: %d\n", channel->refcnt);
+	prlog(LOGD, "on_channel_idle_timer_close - refcnt: %d", channel->refcnt);
 
 	if (channel->refcnt <= 0)
 		destroy_channel(channel);
@@ -34,9 +35,11 @@ static void on_channel_shutdown(uv_shutdown_t *req, int status)
 	ichannel_t *channel = icontainer_of(req, ichannel_t, shutdown_handle);
 
 	if (status < 0) {
-		printf("on_channel_shutdown error: %d\n", status);
+		prlog(LOGC, "on_channel_shutdown error: %d", status);
 		return;
 	}
+
+	fire_pipeline_event(channel, IEVENT_ERROR, req->data, -1);
 
 	uv_read_stop(&channel->h.stream);
 	uv_timer_stop(&channel->idle_timer_handle);
@@ -50,15 +53,17 @@ static void on_channel_shutdown(uv_shutdown_t *req, int status)
 	}
 }
 
-static void channel_shutdown(ichannel_t *channel)
+static void channel_shutdown(ichannel_t *channel, icode_t icode)
 {
+	channel->shutdown_handle.data = (void *)icode;
 	uv_shutdown(&channel->shutdown_handle, &channel->h.stream,
 				on_channel_shutdown);
 }
 
 static void channel_idle_timer_expire(uv_timer_t *handle)
 {
-	channel_shutdown(icontainer_of(handle, ichannel_t, idle_timer_handle));
+	channel_shutdown(icontainer_of(handle, ichannel_t, idle_timer_handle),
+					 ITIMEOUT);
 }
 
 static void channel_idle_timer_reset(ichannel_t *channel)
@@ -101,6 +106,7 @@ static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)
 		/* idle timer reset */
 		channel_idle_timer_reset(channel);
 		fire_pipeline_event(channel, IEVENT_READ, buf->base, datalen);
+		fire_pipeline_event(channel, IEVENT_READCOMPLETE, NULL, 0);
 		return;
 	}
 	if (datalen == UV_EOF) {
@@ -108,7 +114,7 @@ static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)
 	if (datalen < 0) {
 	}
 
-	channel_shutdown(channel);
+	channel_shutdown(channel, IPEERCLOSED);
 	ifree(buf->base);
 }
 
@@ -117,9 +123,8 @@ int setup_tcp_read(uv_loop_t *uvloop, iserver_worker_t *me,
 {
 	ichannel_t *channel = create_channel(NULL, NULL);
 
-	printf("new connection %lu, %d, %s\n", me->thread_id,
-		   fd,
-		   server->config.name);
+	prlog(LOGD, "new connection %lu, %d, %s", me->thread_id, fd,
+		  server->config.name);
 
 	assert(0 == uv_tcp_init(uvloop, &channel->h.tcp));
 	assert(0 == uv_tcp_open(&channel->h.tcp, fd));
@@ -159,8 +164,8 @@ int setup_tcp_server(iserver_t *server, uv_loop_t *uvloop)
 
 	assert(0 == uv_listen(&server->h.stream, 128, on_connect_client));
 
-	printf("%s server(%p) listening on %s:%d\n",
-		   server->config.name, server,
-		   server->config.bindaddr, server->config.bindport);
+	prlog(LOGD, "%s server(%p) listening on %s:%d",
+		  server->config.name, server,
+		  server->config.bindaddr, server->config.bindport);
 	return 1;
 }

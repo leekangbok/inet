@@ -11,7 +11,10 @@
 typedef enum icode_ {
 	ISUCCESS,
 	IFAIL,
-	ISTOLEN
+	ISTOLEN,
+	IPEERCLOSED,
+	ILOCALCLOSED,
+	ITIMEOUT,
 } icode_t;
 
 typedef struct ichannel_ ichannel_t;
@@ -22,9 +25,8 @@ typedef struct iserver_ iserver_t;
 typedef struct iserver_config_ iserver_config_t;
 typedef struct iserver_worker_ iserver_worker_t;
 
-typedef icode_t (*channelhandler_f)(ichannel_t *channel,
-									ichannelhandler_ctx_t *ctx,
-									void *data, ssize_t datalen);
+typedef icode_t (*channelhandler_f)(ichannelhandler_ctx_t *ctx, void *data,
+									ssize_t datalen);
 typedef icode_t (*call_later)(void *data);
 typedef void (*data_destroy_f)(void *data);
 
@@ -61,6 +63,7 @@ struct ichannelhandler_ctx_ {
 	channelhandler_f operation;
 	ichannelhandler_t *handler;
 	char name[IHANDLER_NAME_MAX + 32];
+#define mychannel handler->pipeline->channel
 };
 
 #define IEVENT_ACTIVE		0

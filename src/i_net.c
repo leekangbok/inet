@@ -7,6 +7,7 @@
 #include <i_mem.h>
 #include <i_net.h>
 #include <i_net_tcp.h>
+#include <i_print.h>
 
 typedef struct {
 	struct ll_head ll;
@@ -32,11 +33,11 @@ static void signal_cb(uv_signal_t *handle, int signum)
 	struct ll_head *head = handle->data;
 	signal_handle_t *signal_handle;
 
-	printf("signal(%d) received.\n", signum);
+	prlog(LOGD, "signal(%d) received.", signum);
 
 	switch (signum) {
 	case SIGPIPE:
-		printf("SIGPIPE received.\n");
+		prlog(LOGD, "SIGPIPE received.");
 		break;
 	default:
 		ll_for_each_entry(signal_handle, head, ll) {
@@ -71,14 +72,14 @@ next:
 		signal_handle->signal_cb = server->config.signals_cb[i];
 		signal_handle->server = server;
 		ll_add_tail(&signal_handle->ll, head);
-		printf("'%s' server signal(%d) add handler.\n", server->config.name, i);
+		prlog(LOGD, "'%s' server signal(%d) add handler.", server->config.name, i);
 	}
 	return 1;
 }
 
 static void expire_gh_timer(uv_timer_t *handle)
 {
-	printf("amount of alloc: %zu bytes\n", iamount_of());
+	prlog(LOGD, "amount of alloc: %zu bytes", iamount_of());
 }
 
 static iserver_t predefined_server[] = {
@@ -99,26 +100,20 @@ void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
 	buf->len = suggested_size;
 }
 
-static icode_t pass_handler(ichannel_t *channel, ichannelhandler_ctx_t *ctx,
-							void *data, ssize_t datalen)
+static icode_t def_outbound_handler(ichannelhandler_ctx_t *ctx, void *data,
+									ssize_t datalen)
 {
-	return ctx->next(channel, ctx->next_ctx, data, datalen);
-}
-
-static icode_t def_outbound_handler(ichannel_t *channel,
-									ichannelhandler_ctx_t *ctx,
-									void *data, ssize_t datalen)
-{
-	printf("def_outbound_handler\n");
+	prlog(LOGD, "def_outbound_handler");
 	return ISUCCESS;
 }
 
-static icode_t def_inbound_handler(ichannel_t *channel,
-								   ichannelhandler_ctx_t *ctx,
-								   void *data, ssize_t datalen)
+static icode_t def_inbound_handler(ichannelhandler_ctx_t *ctx, void *data,
+								   ssize_t datalen)
 {
-	printf("def_inbound_handler\n");
-	ifree(data);
+	prlog(LOGD, "def_inbound_handler");
+
+	if (datalen >= 0)
+		ifree(data);
 	return ISUCCESS;
 }
 
@@ -201,6 +196,12 @@ ichannel_t *create_channel(void *data, data_destroy_f data_destroy)
 	return channel;
 }
 
+static icode_t callup(ichannelhandler_ctx_t *ctx, void *data, ssize_t datalen)
+{
+	ichannelhandler_ctx_t *next_ctx = ctx->next_ctx;
+	return next_ctx->operation(next_ctx, data, datalen);
+}
+
 static void locate_handler_context(ichannelhandler_t *handler,
 								   ichannelhandler_ctx_t *curr,
 								   ichannelhandler_ctx_t *prev,
@@ -208,10 +209,10 @@ static void locate_handler_context(ichannelhandler_t *handler,
 								   channelhandler_f operation)
 {
 	curr->handler = handler;
-	curr->operation = operation ? operation : pass_handler;
-	curr->next = next->operation;
+	curr->operation = operation ? operation : callup;
+	curr->next = callup;
 	curr->next_ctx = next;
-	prev->next = curr->operation;
+	prev->next = callup;
 	prev->next_ctx = curr;
 }
 
@@ -309,15 +310,14 @@ icode_t fire_pipeline_event(ichannel_t *channel, int event,
 		break;
 	}
 
-	return ctx->next(channel, ctx->next_ctx, data, datalen);
+	return ctx->next(ctx, data, datalen);
 }
 
-icode_t fire_ctx_event(ichannelhandler_ctx_t *ctx,
-					   int event, void *data, ssize_t datalen)
+icode_t fire_ctx_event(ichannelhandler_ctx_t *ctx, int event,
+					   void *data, ssize_t datalen)
 {
 	ctx = &ctx->handler->ctx[event];
-	return ctx->next(ctx->handler->pipeline->channel, ctx->next_ctx,
-					 data, datalen);
+	return ctx->next(ctx, data, datalen);
 }
 
 icode_t add_iserver(iserver_config_t *config)

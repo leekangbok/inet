@@ -4,7 +4,7 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
-ACMD_NEW_TCP_CONN	include/i_net.h	34;"	d
+ACMD_NEW_TCP_CONN	include/i_net.h	36;"	d
 ALIGNMENT0	src/i_mem.c	7;"	d	file:
 CC	Makefile	/^CC                    = $(CXX)$/;"	m
 CFLAGS	Makefile	/^CFLAGS  = -O3$/;"	m
@@ -32,23 +32,26 @@ HDREXTS	Makefile	/^HDREXTS = .h .H .hh .hpp .HPP .h++ .hxx .hp$/;"	m
 HEADERS	Makefile	/^HEADERS = $(foreach d,$(SRCDIRS),$(wildcard $(addprefix $(d)\/*,$(HDREXTS))))$/;"	m
 HLL_HEAD	include/llist.h	368;"	d
 HLL_HEAD_INIT	include/llist.h	367;"	d
-IEVENT_ACTIVE	include/i_net.h	66;"	d
-IEVENT_ERROR	include/i_net.h	71;"	d
-IEVENT_ERRORCOMPLETE	include/i_net.h	72;"	d
-IEVENT_MAX	include/i_net.h	73;"	d
-IEVENT_READ	include/i_net.h	67;"	d
-IEVENT_READCOMPLETE	include/i_net.h	68;"	d
-IEVENT_WRITE	include/i_net.h	69;"	d
-IEVENT_WRITECOMPLETE	include/i_net.h	70;"	d
+IEVENT_ACTIVE	include/i_net.h	69;"	d
+IEVENT_ERROR	include/i_net.h	74;"	d
+IEVENT_ERRORCOMPLETE	include/i_net.h	75;"	d
+IEVENT_MAX	include/i_net.h	76;"	d
+IEVENT_READ	include/i_net.h	70;"	d
+IEVENT_READCOMPLETE	include/i_net.h	71;"	d
+IEVENT_WRITE	include/i_net.h	72;"	d
+IEVENT_WRITECOMPLETE	include/i_net.h	73;"	d
 IFAIL	include/i_net.h	/^	IFAIL,$/;"	e	enum:icode_
-IHANDLER_NAME_MAX	include/i_net.h	56;"	d
-INCLUDE	Makefile	/^INCLUDE                = -I. -Iinclude$/;"	m
+IHANDLER_NAME_MAX	include/i_net.h	58;"	d
+ILOCALCLOSED	include/i_net.h	/^	ILOCALCLOSED,$/;"	e	enum:icode_
+INCLUDE	Makefile	/^INCLUDE                = -I. -Iinclude -Isample_app$/;"	m
 INIT_HLL_HEAD	include/llist.h	369;"	d
 INIT_HLL_NODE	include/llist.h	370;"	d
 INIT_LL_HEAD	include/llist.h	55;"	d
 INPTR0	src/i_mem.c	9;"	d	file:
-ISTOLEN	include/i_net.h	/^	ISTOLEN$/;"	e	enum:icode_
+IPEERCLOSED	include/i_net.h	/^	IPEERCLOSED,$/;"	e	enum:icode_
+ISTOLEN	include/i_net.h	/^	ISTOLEN,$/;"	e	enum:icode_
 ISUCCESS	include/i_net.h	/^	ISUCCESS,$/;"	e	enum:icode_
+ITIMEOUT	include/i_net.h	/^	ITIMEOUT,$/;"	e	enum:icode_
 I_ATOMIC_ADD	include/i_atomic.h	42;"	d
 I_ATOMIC_AND	include/i_atomic.h	66;"	d
 I_ATOMIC_CAS	include/i_atomic.h	116;"	d
@@ -75,8 +78,12 @@ LL_HEAD	include/llist.h	52;"	d
 LL_HEAD_INIT	include/llist.h	50;"	d
 LL_POISON1	include/llist.h	34;"	d
 LL_POISON2	include/llist.h	35;"	d
-MAXSIGNUM	include/i_net.h	113;"	d
-NUM_WORKERS	src/i_net.c	26;"	d	file:
+LOGC	include/i_print.h	7;"	d
+LOGD	include/i_print.h	4;"	d
+LOGI	include/i_print.h	5;"	d
+LOGW	include/i_print.h	6;"	d
+MAXSIGNUM	include/i_net.h	116;"	d
+NUM_WORKERS	src/i_net.c	27;"	d	file:
 OBJS	Makefile	/^OBJS    = $(addsuffix .o, $(basename $(SOURCES)))$/;"	m
 OUTPTR0	src/i_mem.c	8;"	d	file:
 PROGRAM	Makefile	/^PROGRAM                = app # libilib.so$/;"	m
@@ -87,6 +94,8 @@ SRCDIRS	Makefile	/^SRCDIRS               :=$/;"	m
 SRCEXTS	Makefile	/^SRCEXTS = .c .C .cc .cpp .CPP .c++ .cxx .cp$/;"	m
 SRC_CXX	Makefile	/^SRC_CXX = $(filter-out %.c,$(SOURCES))$/;"	m
 UNAME_S	Makefile	/^UNAME_S  := $(shell uname -s)$/;"	m
+_ECHO_H	sample_app/echo/echo.h	2;"	d
+_IPRINT_H	include/i_print.h	2;"	d
 _I_ATOMIC_H	include/i_atomic.h	2;"	d
 _I_MACRO_H	include/i_macro.h	2;"	d
 _I_MEM_H	include/i_mem.h	2;"	d
@@ -106,6 +115,7 @@ __spin_lock	include/i_atomic.h	7;"	d
 __spin_trylock	include/i_atomic.h	8;"	d
 __spin_unlock	include/i_atomic.h	9;"	d
 __spinlock	include/i_atomic.h	6;"	d
+active_stage2	sample_app/echo/echo.c	/^static icode_t active_stage2(ichannelhandler_ctx_t *ctx,$/;"	f	file:
 add_channelhandler	src/i_net.c	/^icode_t add_channelhandler(ichannel_t *channel, const char *name,$/;"	f
 add_iserver	src/i_net.c	/^icode_t add_iserver(iserver_config_t *config)$/;"	f
 addr	include/i_net.h	/^		struct sockaddr addr;$/;"	m	union:iserver_::__anon7	typeref:struct:iserver_::__anon7::sockaddr
@@ -119,11 +129,12 @@ bindport	include/i_net.h	/^	int bindport;$/;"	m	struct:iserver_config_
 call_later	include/i_net.h	/^typedef icode_t (*call_later)(void *data);$/;"	t
 call_next	src/i_net.c	/^unsigned long call_next = 0;$/;"	v
 calllater_t	include/i_net.h	/^} calllater_t;$/;"	t	typeref:struct:__anon1
+callup	src/i_net.c	/^static icode_t callup(ichannelhandler_ctx_t *ctx, void *data, ssize_t datalen)$/;"	f	file:
 channel	include/i_net.h	/^	ichannel_t *channel;$/;"	m	struct:ichannelpipeline_
 channel_idle_timer_expire	src/i_net_tcp.c	/^static void channel_idle_timer_expire(uv_timer_t *handle)$/;"	f	file:
 channel_idle_timer_reset	src/i_net_tcp.c	/^static void channel_idle_timer_reset(ichannel_t *channel)$/;"	f	file:
-channel_shutdown	src/i_net_tcp.c	/^static void channel_shutdown(ichannel_t *channel)$/;"	f	file:
-channelhandler_f	include/i_net.h	/^typedef icode_t (*channelhandler_f)(ichannel_t *channel,$/;"	t
+channel_shutdown	src/i_net_tcp.c	/^static void channel_shutdown(ichannel_t *channel, icode_t icode)$/;"	f	file:
+channelhandler_f	include/i_net.h	/^typedef icode_t (*channelhandler_f)(ichannelhandler_ctx_t *ctx, void *data,$/;"	t
 channels	include/i_net.h	/^	struct ll_head channels;$/;"	m	struct:iserver_	typeref:struct:iserver_::ll_head
 cmd	include/i_net.h	/^	int cmd;$/;"	m	struct:__anon2
 cmd_handle	include/i_net.h	/^	uv_async_t cmd_handle;$/;"	m	struct:iserver_worker_
@@ -137,14 +148,15 @@ data	include/i_net.h	/^	void *data;$/;"	m	struct:ichannelhandler_
 data	include/i_net.h	/^	void *data;$/;"	m	struct:iserver_
 data_destroy	include/i_net.h	/^	data_destroy_f data_destroy;$/;"	m	struct:ichannel_
 data_destroy	include/i_net.h	/^	data_destroy_f data_destroy;$/;"	m	struct:ichannelhandler_
-data_destroy_f	include/i_net.h	/^typedef void (*data_destroy_f)(void **data);$/;"	t
+data_destroy_f	include/i_net.h	/^typedef void (*data_destroy_f)(void *data);$/;"	t
 dbl	src/i_mem.c	/^	double dbl;$/;"	m	union:alignment0	file:
-def_inbound_handler	src/i_net.c	/^static icode_t def_inbound_handler(ichannel_t *channel,$/;"	f	file:
-def_outbound_handler	src/i_net.c	/^static icode_t def_outbound_handler(ichannel_t *channel,$/;"	f	file:
+def_inbound_handler	src/i_net.c	/^static icode_t def_inbound_handler(ichannelhandler_ctx_t *ctx, void *data,$/;"	f	file:
+def_outbound_handler	src/i_net.c	/^static icode_t def_outbound_handler(ichannelhandler_ctx_t *ctx, void *data,$/;"	f	file:
 destroy_channel	src/i_net.c	/^void destroy_channel(ichannel_t *channel)$/;"	f
 expire_gh_timer	src/i_net.c	/^static void expire_gh_timer(uv_timer_t *handle)$/;"	f	file:
 fd	include/i_net.h	/^			int fd;$/;"	m	struct:__anon2::__anon3::__anon4
-fire_event	src/i_net.c	/^icode_t fire_event(ichannel_t *channel, int ihandler_type, void **data)$/;"	f
+fire_ctx_event	src/i_net.c	/^icode_t fire_ctx_event(ichannelhandler_ctx_t *ctx, int event,$/;"	f
+fire_pipeline_event	src/i_net.c	/^icode_t fire_pipeline_event(ichannel_t *channel, int event,$/;"	f
 first	include/llist.h	/^	struct hll_node *first;$/;"	m	struct:hll_head	typeref:struct:hll_head::hll_node
 h	include/i_net.h	/^	} h;$/;"	m	struct:ichannel_	typeref:union:ichannel_::__anon5
 h	include/i_net.h	/^	} h;$/;"	m	struct:iserver_	typeref:union:iserver_::__anon6
@@ -225,8 +237,10 @@ ll_move_tail	include/llist.h	/^static inline void ll_move_tail(struct ll_head *l
 ll_prepare_entry	include/llist.h	293;"	d
 ll_splice	include/llist.h	/^static inline void ll_splice(struct ll_head *list, struct ll_head *head)$/;"	f
 ll_splice_init	include/llist.h	/^static inline void ll_splice_init(struct ll_head *list,$/;"	f
-locate_handler_context	src/i_net.c	/^static void locate_handler_context(ichannelhandler_ctx_t *curr,$/;"	f	file:
+locate_handler_context	src/i_net.c	/^static void locate_handler_context(ichannelhandler_t *handler,$/;"	f	file:
+loglevel	src/i_print.c	/^int loglevel = LOGD;$/;"	v
 main	main.c	/^int main(int argc, char *argv[])$/;"	f
+mychannel	include/i_net.h	66;"	d
 name	include/i_net.h	/^	char name[IHANDLER_NAME_MAX + 32];$/;"	m	struct:ichannelhandler_ctx_
 name	include/i_net.h	/^	char name[IHANDLER_NAME_MAX];$/;"	m	struct:ichannelhandler_
 name	include/i_net.h	/^	const char *name;$/;"	m	struct:iserver_config_
@@ -242,19 +256,19 @@ on_channel_close	src/i_net_tcp.c	/^static void on_channel_close(uv_handle_t *han
 on_channel_idle_timer_close	src/i_net_tcp.c	/^static void on_channel_idle_timer_close(uv_handle_t *handle)$/;"	f	file:
 on_channel_shutdown	src/i_net_tcp.c	/^static void on_channel_shutdown(uv_shutdown_t *req, int status)$/;"	f	file:
 on_connect_client	src/i_net_tcp.c	/^static void on_connect_client(uv_stream_t *stream, int status)$/;"	f	file:
-on_data	src/i_net_tcp.c	/^static void on_data(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)$/;"	f	file:
+on_data	src/i_net_tcp.c	/^static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)$/;"	f	file:
 operation	include/i_net.h	/^	channelhandler_f operation;$/;"	m	struct:ichannelhandler_ctx_
 origin_conn_closed	src/i_net_tcp.c	/^static void origin_conn_closed(uv_handle_t *handle)$/;"	f	file:
-pass_handler	src/i_net.c	/^static icode_t pass_handler(ichannel_t *channel, ichannelhandler_ctx_t *ctx,$/;"	f	file:
 pipeline	include/i_net.h	/^	ichannelpipeline_t *pipeline;$/;"	m	struct:ichannelhandler_
 pipeline	include/i_net.h	/^	ichannelpipeline_t pipeline;$/;"	m	struct:ichannel_
 pprev	include/llist.h	/^	struct hll_node *next, **pprev;$/;"	m	struct:hll_node	typeref:struct:hll_node::
 predefined_server	src/i_net.c	/^static iserver_t predefined_server[] = {$/;"	v	file:
 prev	include/llist.h	/^	struct ll_head *next, *prev;$/;"	m	struct:ll_head	typeref:struct:ll_head::
+prlog	src/i_print.c	/^void prlog(int level, const char *fmt, ...)$/;"	f
 ptr	src/i_mem.c	/^	void *ptr;$/;"	m	union:alignment0	file:
-read1	main.c	/^static icode_t read1(ichannel_t *channel,$/;"	f	file:
-read2	main.c	/^static icode_t read2(ichannel_t *channel,$/;"	f	file:
-read3	main.c	/^static icode_t read3(ichannel_t *channel,$/;"	f	file:
+read_stage1	sample_app/echo/echo.c	/^static icode_t read_stage1(ichannelhandler_ctx_t *ctx,$/;"	f	file:
+read_stage2	sample_app/echo/echo.c	/^static icode_t read_stage2(ichannelhandler_ctx_t *ctx,$/;"	f	file:
+read_stage3	sample_app/echo/echo.c	/^static icode_t read_stage3(ichannelhandler_ctx_t *ctx,$/;"	f	file:
 refcnt	include/i_net.h	/^	int refcnt;$/;"	m	struct:ichannel_
 server	include/i_net.h	/^			iserver_t *server;$/;"	m	struct:__anon2::__anon3::__anon4
 server	include/i_net.h	/^	iserver_t *server;$/;"	m	struct:ichannel_
@@ -264,6 +278,7 @@ set_channel_data	src/i_net.c	/^icode_t set_channel_data(ichannel_t *channel,$/;"
 set_def_inbound_handler	src/i_net.c	/^static void set_def_inbound_handler(ichannelhandler_t *channelhandler)$/;"	f	file:
 set_def_outbound_handler	src/i_net.c	/^static void set_def_outbound_handler(ichannelhandler_t *channelhandler)$/;"	f	file:
 setup_channel	include/i_net.h	/^	void (*setup_channel)(ichannel_t *channel);$/;"	m	struct:iserver_config_
+setup_echo_channel	sample_app/echo/echo.c	/^void setup_echo_channel(ichannel_t *channel)$/;"	f
 setup_server	include/i_net.h	/^	int (*setup_server)(iserver_t *server, uv_loop_t *uvloop);$/;"	m	struct:iserver_
 setup_server	include/i_net.h	/^	void (*setup_server)(iserver_t *server);$/;"	m	struct:iserver_config_
 setup_tcp_read	src/i_net_tcp.c	/^int setup_tcp_read(uv_loop_t *uvloop, iserver_worker_t *me,$/;"	f
@@ -299,6 +314,6 @@ uvsignals	src/i_net.c	/^static uv_signal_t uvsignals[MAXSIGNUM];$/;"	v	file:
 wait_for_thread_start	src/i_net.c	/^static void wait_for_thread_start(int nthreads)$/;"	f	file:
 worker_thread_f	src/i_net.c	/^static void worker_thread_f(void *arg)$/;"	f	file:
 workers	src/i_net.c	/^static iserver_worker_t workers[NUM_WORKERS];$/;"	v	file:
-write1	main.c	/^static icode_t write1(ichannel_t *channel,$/;"	f	file:
-write2	main.c	/^static icode_t write2(ichannel_t *channel,$/;"	f	file:
-write3	main.c	/^static icode_t write3(ichannel_t *channel,$/;"	f	file:
+write_stage1	sample_app/echo/echo.c	/^static icode_t write_stage1(ichannelhandler_ctx_t *ctx,$/;"	f	file:
+write_stage2	sample_app/echo/echo.c	/^static icode_t write_stage2(ichannelhandler_ctx_t *ctx,$/;"	f	file:
+write_stage3	sample_app/echo/echo.c	/^static icode_t write_stage3(ichannelhandler_ctx_t *ctx,$/;"	f	file:
