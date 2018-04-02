@@ -54,8 +54,8 @@ static icode_t read_stage3(ichannelhandler_ctx_t *ctx,
 
 	prlog(LOGD, "%s", ctx->name);
 
-	c->data = data;
-	c->datalen = datalen;
+	c->write.data = data;
+	c->write.datalen = datalen;
 
 	return fire_ctx_event(ctx, IEVENT_WRITE, c, sizeof(calllater_t));
 }

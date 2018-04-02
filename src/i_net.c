@@ -102,13 +102,13 @@ void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
 
 void done_stream_write(uv_write_t *req, int status)
 {
-	calllater_t *c = icontainer_of(req, calllater_t, req.write);
+	calllater_t *c = icontainer_of(req, calllater_t, write.req.write);
 
 	if (status) {
 		prlog(LOGC, "Write error %s\n", uv_err_name(status));
 	}
 
-	ifree(c->data);
+	ifree(c->write.data);
 	ifree(c);
 }
 
@@ -117,13 +117,13 @@ static icode_t def_outbound_handler(ichannelhandler_ctx_t *ctx, void *data,
 {
 	calllater_t *c = (calllater_t *)data;
 
-	c->send.buf.wbuf.buf = uv_buf_init(c->data, c->datalen);
+	c->write.buf = uv_buf_init(c->write.data, c->write.datalen);
 
 	switch (ctx->mychannel->server->servertype) {
 	case SERVERTYPE_TCP:
-		if (uv_write(&c->req.write, &ctx->mychannel->h.stream,
-					 &c->send.buf.wbuf.buf, 1, done_stream_write) != 0) {
-			done_stream_write(&c->req.write, -1);
+		if (uv_write(&c->write.req.write, &ctx->mychannel->h.stream,
+					 &c->write.buf, 1, done_stream_write) != 0) {
+			done_stream_write(&c->write.req.write, -1);
 		}
 		break;
 	case SERVERTYPE_UDP:

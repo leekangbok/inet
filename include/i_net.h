@@ -33,25 +33,17 @@ typedef void (*data_destroy_f)(void *data);
 typedef struct {
 	void *data;
 	ssize_t datalen;
-	struct {
-		union {
-			struct {
-				const uv_buf_t buf;
-				ssize_t nread;
-			} rbuf;
-			struct {
-				uv_buf_t buf;
-			} wbuf;
-		} buf;
-		union {
-			const struct sockaddr *addr;
-		} dest;
-	} send;
+	uv_buf_t buf;
+	const struct sockaddr *addr;
 	union {
 		uv_req_t req;
 		uv_write_t write;
 		uv_udp_send_t udp_write;
 	} req;
+} write_calllater_t;
+
+typedef union {
+	write_calllater_t write;
 } calllater_t;
 
 #define ACMD_NEW_TCP_CONN 1
