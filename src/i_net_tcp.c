@@ -53,7 +53,7 @@ static void on_channel_shutdown(uv_shutdown_t *req, int status)
 	}
 }
 
-static void channel_shutdown(ichannel_t *channel, icode_t icode)
+void channel_shutdown(ichannel_t *channel, icode_t icode)
 {
 	channel->shutdown_handle.data = (void *)icode;
 	uv_shutdown(&channel->shutdown_handle, &channel->h.stream,
@@ -163,6 +163,8 @@ int setup_tcp_server(iserver_t *server, uv_loop_t *uvloop)
 		server->config.setup_uvhandle(&server->h.handle, "TCPServerBind");
 
 	assert(0 == uv_listen(&server->h.stream, 128, on_connect_client));
+
+	server->servertype = SERVERTYPE_TCP;
 
 	prlog(LOGD, "%s server(%p) listening on %s:%d",
 		  server->config.name, server,

@@ -100,10 +100,37 @@ void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
 	buf->len = suggested_size;
 }
 
+void done_stream_write(uv_write_t *req, int status)
+{
+	calllater_t *c = icontainer_of(req, calllater_t, req.write);
+
+	if (status) {
+		prlog(LOGC, "Write error %s\n", uv_err_name(status));
+	}
+
+	ifree(c->data);
+	ifree(c);
+}
+
 static icode_t def_outbound_handler(ichannelhandler_ctx_t *ctx, void *data,
 									ssize_t datalen)
 {
-	prlog(LOGD, "def_outbound_handler");
+	calllater_t *c = (calllater_t *)data;
+
+	c->send.buf.wbuf.buf = uv_buf_init(c->data, c->datalen);
+
+	switch (ctx->mychannel->server->servertype) {
+	case SERVERTYPE_TCP:
+		if (uv_write(&c->req.write, &ctx->mychannel->h.stream,
+					 &c->send.buf.wbuf.buf, 1, done_stream_write) != 0) {
+			done_stream_write(&c->req.write, -1);
+		}
+		break;
+	case SERVERTYPE_UDP:
+		break;
+	default:
+		break;
+	}
 	return ISUCCESS;
 }
 
@@ -121,10 +148,15 @@ static void set_def_inbound_handler(ichannelhandler_t *channelhandler)
 {
 	memset(channelhandler, 0x00, sizeof(ichannelhandler_t));
 
+	channelhandler->ctx[IEVENT_ACTIVE].handler = channelhandler;
 	channelhandler->ctx[IEVENT_ACTIVE].operation = def_inbound_handler;
+	channelhandler->ctx[IEVENT_READ].handler = channelhandler;
 	channelhandler->ctx[IEVENT_READ].operation = def_inbound_handler;
+	channelhandler->ctx[IEVENT_READCOMPLETE].handler = channelhandler;
 	channelhandler->ctx[IEVENT_READCOMPLETE].operation = def_inbound_handler;
+	channelhandler->ctx[IEVENT_ERROR].handler = channelhandler;
 	channelhandler->ctx[IEVENT_ERROR].operation = def_inbound_handler;
+	channelhandler->ctx[IEVENT_ERRORCOMPLETE].handler = channelhandler;
 	channelhandler->ctx[IEVENT_ERRORCOMPLETE].operation = def_inbound_handler;
 }
 
@@ -132,7 +164,9 @@ static void set_def_outbound_handler(ichannelhandler_t *channelhandler)
 {
 	memset(channelhandler, 0x00, sizeof(ichannelhandler_t));
 
+	channelhandler->ctx[IEVENT_WRITE].handler = channelhandler;
 	channelhandler->ctx[IEVENT_WRITE].operation = def_outbound_handler;
+	channelhandler->ctx[IEVENT_WRITECOMPLETE].handler = channelhandler;
 	channelhandler->ctx[IEVENT_WRITECOMPLETE].operation = def_outbound_handler;
 }
 
@@ -147,7 +181,9 @@ icode_t init_channelpipeline(ichannelpipeline_t *channelpipeline)
 	channelpipeline->numofhandler = 2;
 
 	set_def_inbound_handler(channelpipeline->handler + 1);
+	(channelpipeline->handler + 1)->pipeline = channelpipeline;
 	set_def_outbound_handler(channelpipeline->handler);
+	(channelpipeline->handler)->pipeline = channelpipeline;
 
 	return ISUCCESS;
 }

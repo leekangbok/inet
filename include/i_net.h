@@ -31,6 +31,27 @@ typedef icode_t (*call_later)(void *data);
 typedef void (*data_destroy_f)(void *data);
 
 typedef struct {
+	void *data;
+	ssize_t datalen;
+	struct {
+		union {
+			struct {
+				const uv_buf_t buf;
+				ssize_t nread;
+			} rbuf;
+			struct {
+				uv_buf_t buf;
+			} wbuf;
+		} buf;
+		union {
+			const struct sockaddr *addr;
+		} dest;
+	} send;
+	union {
+		uv_req_t req;
+		uv_write_t write;
+		uv_udp_send_t udp_write;
+	} req;
 } calllater_t;
 
 #define ACMD_NEW_TCP_CONN 1
@@ -134,6 +155,9 @@ struct iserver_ {
 		struct sockaddr_in addr4;
 		struct sockaddr_in6 addr6;
 	} addr;
+#define SERVERTYPE_TCP 1
+#define SERVERTYPE_UDP 2
+	int servertype;
 	iserver_config_t config;
 	int (*setup_server)(iserver_t *server, uv_loop_t *uvloop);
 	uv_loop_t *uvloop;

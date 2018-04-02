@@ -50,9 +50,14 @@ static icode_t write_stage2(ichannelhandler_ctx_t *ctx,
 static icode_t read_stage3(ichannelhandler_ctx_t *ctx,
 						   void *data, ssize_t datalen)
 {
+	calllater_t *c = icalloc(sizeof(calllater_t));
+
 	prlog(LOGD, "%s", ctx->name);
-	ifree(data);
-	return fire_ctx_event(ctx, IEVENT_WRITE, NULL, 0);
+
+	c->data = data;
+	c->datalen = datalen;
+
+	return fire_ctx_event(ctx, IEVENT_WRITE, c, sizeof(calllater_t));
 }
 
 static icode_t write_stage3(ichannelhandler_ctx_t *ctx,
