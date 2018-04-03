@@ -24,13 +24,16 @@ typedef struct ichannelhandler_ctx_ ichannelhandler_ctx_t;
 typedef struct iserver_ iserver_t;
 typedef struct iserver_config_ iserver_config_t;
 typedef struct iserver_worker_ iserver_worker_t;
+typedef struct callback_ callback_t;
+typedef struct calllater_ calllater_t;
 
 typedef icode_t (*channelhandler_f)(ichannelhandler_ctx_t *ctx, void *data,
 									ssize_t datalen);
-typedef icode_t (*call_later)(void *data);
+typedef icode_t (*call_later)(calllater_t *c, void *data, int status);
 typedef void (*data_destroy_f)(void *data);
 
 typedef struct {
+	ichannel_t *channel;
 	void *data;
 	ssize_t datalen;
 	uv_buf_t buf;
@@ -42,9 +45,20 @@ typedef struct {
 	} req;
 } write_calllater_t;
 
-typedef union {
-	write_calllater_t write;
-} calllater_t;
+struct callback_ {
+	struct ll_head ll;
+	call_later f;
+	void *data;
+	data_destroy_f data_destroy;
+};
+
+struct calllater_ {
+	struct ll_head callbacks;
+	ichannelhandler_ctx_t *ctx;
+	union {
+		write_calllater_t write;
+	};
+};
 
 #define ACMD_NEW_TCP_CONN 1
 
@@ -156,6 +170,9 @@ struct iserver_ {
 	void *data;
 };
 
+calllater_t *create_calllater(void);
+void add_calllater(calllater_t *c, call_later f, void *data, data_destroy_f df);
+void call_callbacks(calllater_t *c, int status);
 void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
 				 uv_buf_t *buf);
 void notify_async_cmd(async_cmd_t *cmd);

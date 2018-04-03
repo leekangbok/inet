@@ -100,6 +100,35 @@ void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
 	buf->len = suggested_size;
 }
 
+calllater_t *create_calllater(void)
+{
+	calllater_t *c = icalloc(sizeof(calllater_t));
+
+	INIT_LL_HEAD(&c->callbacks);
+
+	return c;
+}
+
+void add_calllater(calllater_t *c, call_later f, void *data, data_destroy_f df)
+{
+	callback_t *cb = icalloc(sizeof(callback_t));
+
+	cb->f = f; cb->data = data; cb->data_destroy = df;
+
+	ll_add_tail(&cb->ll, &c->callbacks);
+}
+
+void call_callbacks(calllater_t *c, int status)
+{
+	callback_t *cb, *_cb;
+
+	ll_for_each_entry_safe(cb, _cb, &c->callbacks, ll) {
+		cb->f(c, cb->data, status);
+		ll_del(&cb->ll);
+		ifree(cb);
+	}
+}
+
 void done_stream_write(uv_write_t *req, int status)
 {
 	calllater_t *c = icontainer_of(req, calllater_t, write.req.write);
@@ -107,6 +136,11 @@ void done_stream_write(uv_write_t *req, int status)
 	if (status) {
 		prlog(LOGC, "Write error %s\n", uv_err_name(status));
 	}
+
+	call_callbacks(c, status);
+
+	fire_pipeline_event(c->write.channel, IEVENT_WRITECOMPLETE,
+						(void *)(long)status, -1);
 
 	ifree(c->write.data);
 	ifree(c);
@@ -117,6 +151,11 @@ static icode_t def_outbound_handler(ichannelhandler_ctx_t *ctx, void *data,
 {
 	calllater_t *c = (calllater_t *)data;
 
+	if (c == NULL || datalen <= 0) {
+		return ISUCCESS;
+	}
+
+	c->write.channel = ctx->mychannel;
 	c->write.buf = uv_buf_init(c->write.data, c->write.datalen);
 
 	switch (ctx->mychannel->server->servertype) {
