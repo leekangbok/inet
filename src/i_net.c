@@ -11,8 +11,8 @@
 
 typedef struct {
 	struct ll_head ll;
-	iserver_t *server;
-	void (*signal_cb)(iserver_t *server, int signum);
+	server_t *server;
+	void (*signal_cb)(server_t *server, int signum);
 } signal_handle_t;
 
 static uv_signal_t uvsignals[MAXSIGNUM];
@@ -26,7 +26,7 @@ static pthread_cond_t init_cond;
 unsigned long call_next = 0;
 #define NUM_WORKERS 8
 
-static iserver_worker_t workers[NUM_WORKERS];
+static server_worker_t workers[NUM_WORKERS];
 
 static void signal_cb(uv_signal_t *handle, int signum)
 {
@@ -47,7 +47,7 @@ static void signal_cb(uv_signal_t *handle, int signum)
 	}
 }
 
-static int signal_setup(iserver_t *server, uv_loop_t *uvloop)
+static int signal_setup(server_t *server, uv_loop_t *uvloop)
 {
 	int i;
 	struct ll_head *head = NULL;
@@ -82,7 +82,7 @@ static void expire_gh_timer(uv_timer_t *handle)
 	prlog(LOGD, "amount of alloc: %zu bytes", iamount_of());
 }
 
-static iserver_t predefined_server[] = {
+static server_t predefined_server[] = {
 	{ .config = {
 					.servertype = "tcp_ip4",
 				},
@@ -131,7 +131,8 @@ void call_callbacks(calllater_t *c, int status)
 
 void done_stream_write(uv_write_t *req, int status)
 {
-	calllater_t *c = icontainer_of(req, calllater_t, write.req.write);
+	calllater_t *c = containerof(req, calllater_t, write.req.write);
+	channel_t *channel = c->write.channel;
 
 	if (status) {
 		prlog(LOGC, "Write error %s\n", uv_err_name(status));
@@ -139,22 +140,25 @@ void done_stream_write(uv_write_t *req, int status)
 
 	call_callbacks(c, status);
 
-	fire_pipeline_event(c->write.channel, IEVENT_WRITECOMPLETE,
-						(void *)(long)status, -1);
+	callup_channel(c->write.channel, EVENT_WRITECOMPLETE,
+				   (void *)(long)status, -1);
 
 	ifree(c->write.data);
 	ifree(c);
+
+	destroy_channel(channel);
 }
 
-static icode_t def_outbound_handler(ichannelhandler_ctx_t *ctx, void *data,
-									ssize_t datalen)
+static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,
+								   ssize_t datalen)
 {
 	calllater_t *c = (calllater_t *)data;
 
 	if (c == NULL || datalen <= 0) {
-		return ISUCCESS;
+		return SUCCESS;
 	}
 
+	ctx->mychannel->refcnt++;
 	c->write.channel = ctx->mychannel;
 	c->write.buf = uv_buf_init(c->write.data, c->write.datalen);
 
@@ -170,65 +174,55 @@ static icode_t def_outbound_handler(ichannelhandler_ctx_t *ctx, void *data,
 	default:
 		break;
 	}
-	return ISUCCESS;
+	return SUCCESS;
 }
 
-static icode_t def_inbound_handler(ichannelhandler_ctx_t *ctx, void *data,
-								   ssize_t datalen)
+static code_t def_inbound_handler(channelhandlerctx_t *ctx, void *data,
+								  ssize_t datalen)
 {
-	prlog(LOGD, "def_inbound_handler");
-
 	if (datalen >= 0)
 		ifree(data);
-	return ISUCCESS;
+	return SUCCESS;
 }
 
-static void set_def_inbound_handler(ichannelhandler_t *channelhandler)
+static void set_def_inbound_handler(channelhandler_t *channelhandler)
 {
-	memset(channelhandler, 0x00, sizeof(ichannelhandler_t));
-
-	channelhandler->ctx[IEVENT_ACTIVE].handler = channelhandler;
-	channelhandler->ctx[IEVENT_ACTIVE].operation = def_inbound_handler;
-	channelhandler->ctx[IEVENT_READ].handler = channelhandler;
-	channelhandler->ctx[IEVENT_READ].operation = def_inbound_handler;
-	channelhandler->ctx[IEVENT_READCOMPLETE].handler = channelhandler;
-	channelhandler->ctx[IEVENT_READCOMPLETE].operation = def_inbound_handler;
-	channelhandler->ctx[IEVENT_ERROR].handler = channelhandler;
-	channelhandler->ctx[IEVENT_ERROR].operation = def_inbound_handler;
-	channelhandler->ctx[IEVENT_ERRORCOMPLETE].handler = channelhandler;
-	channelhandler->ctx[IEVENT_ERRORCOMPLETE].operation = def_inbound_handler;
+	channelhandler->ctx[EVENT_ACTIVE].handler = channelhandler;
+	channelhandler->ctx[EVENT_ACTIVE].operation = def_inbound_handler;
+	channelhandler->ctx[EVENT_READ].handler = channelhandler;
+	channelhandler->ctx[EVENT_READ].operation = def_inbound_handler;
+	channelhandler->ctx[EVENT_READCOMPLETE].handler = channelhandler;
+	channelhandler->ctx[EVENT_READCOMPLETE].operation = def_inbound_handler;
+	channelhandler->ctx[EVENT_ERROR].handler = channelhandler;
+	channelhandler->ctx[EVENT_ERROR].operation = def_inbound_handler;
+	channelhandler->ctx[EVENT_ERRORCOMPLETE].handler = channelhandler;
+	channelhandler->ctx[EVENT_ERRORCOMPLETE].operation = def_inbound_handler;
 }
 
-static void set_def_outbound_handler(ichannelhandler_t *channelhandler)
+static void set_def_outbound_handler(channelhandler_t *channelhandler)
 {
-	memset(channelhandler, 0x00, sizeof(ichannelhandler_t));
-
-	channelhandler->ctx[IEVENT_WRITE].handler = channelhandler;
-	channelhandler->ctx[IEVENT_WRITE].operation = def_outbound_handler;
-	channelhandler->ctx[IEVENT_WRITECOMPLETE].handler = channelhandler;
-	channelhandler->ctx[IEVENT_WRITECOMPLETE].operation = def_outbound_handler;
+	channelhandler->ctx[EVENT_WRITE].handler = channelhandler;
+	channelhandler->ctx[EVENT_WRITE].operation = def_outbound_handler;
+	channelhandler->ctx[EVENT_WRITECOMPLETE].handler = channelhandler;
+	channelhandler->ctx[EVENT_WRITECOMPLETE].operation = def_outbound_handler;
 }
 
-icode_t init_channelpipeline(ichannelpipeline_t *channelpipeline)
+code_t init_channelpipeline(channelpipeline_t *channelpipeline)
 {
-	channelpipeline->numofhandler = 0;
-	channelpipeline->handler = NULL;
-
-	channelpipeline->handler = irealloc(channelpipeline->handler,
-										2 * sizeof(ichannelhandler_t));
-
+	channelpipeline->handler = icalloc(10 * sizeof(channelhandler_t));
 	channelpipeline->numofhandler = 2;
 
-	set_def_inbound_handler(channelpipeline->handler + 1);
-	(channelpipeline->handler + 1)->pipeline = channelpipeline;
-	set_def_outbound_handler(channelpipeline->handler);
-	(channelpipeline->handler)->pipeline = channelpipeline;
+	set_def_inbound_handler(&channelpipeline->handler[1]);
+	channelpipeline->handler[1].pipeline = channelpipeline;
 
-	return ISUCCESS;
+	set_def_outbound_handler(&channelpipeline->handler[0]);
+	channelpipeline->handler[0].pipeline = channelpipeline;
+
+	return SUCCESS;
 }
 
-icode_t set_channel_data(ichannel_t *channel,
-						 void *data, data_destroy_f data_destroy)
+code_t set_channel_data(channel_t *channel,
+						void *data, data_destroy_f data_destroy)
 {
 	if (channel->data)
 		channel->data_destroy(channel->data);
@@ -236,15 +230,26 @@ icode_t set_channel_data(ichannel_t *channel,
 	channel->data = data;
 	channel->data_destroy = data_destroy;
 
-	return ISUCCESS;
+	return SUCCESS;
 }
 
-void destroy_channel(ichannel_t *channel)
+void destroy_channel(channel_t *channel)
 {
 	int i;
 
+	channel->refcnt--;
+
+	assert(channel->refcnt >= 0);
+
+	prlog(LOGD, "Channel(%p) - refcnt: %d", channel, channel->refcnt);
+
+	if (channel->refcnt > 0)
+		return;
+
+	prlog(LOGD, "Channel destroy.");
+
 	for (i = 0; i < channel->pipeline.numofhandler; i++) {
-		ichannelhandler_t *handler = channel->pipeline.handler + i;
+		channelhandler_t *handler = channel->pipeline.handler + i;
 		if (handler->data) {
 			handler->data_destroy(handler->data);
 			handler->data = NULL;
@@ -259,124 +264,119 @@ void destroy_channel(ichannel_t *channel)
 	ifree(channel);
 }
 
-ichannel_t *create_channel(void *data, data_destroy_f data_destroy)
+channel_t *create_channel(void *data, data_destroy_f data_destroy)
 {
-	ichannel_t *channel = icalloc(sizeof(ichannel_t));
+	channel_t *channel = icalloc(sizeof(channel_t));
 
-	init_channelpipeline(&channel->pipeline);
+	INIT_LL_HEAD(&channel->queueworks);
 
 	channel->pipeline.channel = channel;
+	init_channelpipeline(&channel->pipeline);
+
 	set_channel_data(channel, data, data_destroy);
 
 	return channel;
 }
 
-static icode_t callup(ichannelhandler_ctx_t *ctx, void *data, ssize_t datalen)
+code_t callup(channelhandlerctx_t *ctx, void *data, ssize_t datalen)
 {
-	ichannelhandler_ctx_t *next_ctx = ctx->next_ctx;
-	return next_ctx->operation(next_ctx, data, datalen);
+	return ctx->next_ctx->operation(ctx->next_ctx, data, datalen);
 }
 
-static void locate_handler_context(ichannelhandler_t *handler,
-								   ichannelhandler_ctx_t *curr,
-								   ichannelhandler_ctx_t *prev,
-								   ichannelhandler_ctx_t *next,
+static void locate_handler_context(channelhandler_t *handler,
+								   channelhandlerctx_t *curr,
+								   channelhandlerctx_t *prev,
+								   channelhandlerctx_t *next,
 								   channelhandler_f operation)
 {
 	curr->handler = handler;
 	curr->operation = operation ? operation : callup;
-	curr->next = callup;
 	curr->next_ctx = next;
-	prev->next = callup;
 	prev->next_ctx = curr;
 }
 
-icode_t add_channelhandler(ichannel_t *channel, const char *name,
-						   channelhandler_f active,
-						   channelhandler_f read,
-						   channelhandler_f read_complete,
-						   channelhandler_f write,
-						   channelhandler_f write_complete,
-						   channelhandler_f error,
-						   channelhandler_f error_complete,
-						   void *data, data_destroy_f data_destroy)
+code_t add_channelhandler(channel_t *channel, const char *name,
+						  channelhandler_f active,
+						  channelhandler_f read,
+						  channelhandler_f read_complete,
+						  channelhandler_f write,
+						  channelhandler_f write_complete,
+						  channelhandler_f error,
+						  channelhandler_f error_complete,
+						  void *data, data_destroy_f data_destroy)
 {
-	ichannelpipeline_t *channelpipeline = &channel->pipeline;
-	ichannelhandler_t *curr, *prev, *next;
-
-	channelpipeline->handler = irealloc(channelpipeline->handler,
-										(channelpipeline->numofhandler + 1) * \
-										sizeof(ichannelhandler_t));
+	channelpipeline_t *channelpipeline = &channel->pipeline;
+	channelhandler_t *curr, *prev, *next;
 
 	next = channelpipeline->handler + channelpipeline->numofhandler;
 	curr = next - 1;
 	prev = curr - 1;
 
-	memcpy(next, curr, sizeof(ichannelhandler_t));
+	memcpy(next, curr, sizeof(channelhandler_t));
 
-	snprintf(curr->name, IHANDLER_NAME_MAX - 1, "%s", name);
+	snprintf(curr->name, HANDLER_NAME_MAX - 1, "%s", name);
 	curr->data = data;
 	curr->data_destroy = data_destroy;
 	curr->pipeline = channelpipeline;
 
-	sprintf(curr->ctx[IEVENT_ACTIVE].name, "%s::ACTIVE", curr->name);
+	sprintf(curr->ctx[EVENT_ACTIVE].name, "%s::ACTIVE", curr->name);
 	locate_handler_context(curr,
-						   &curr->ctx[IEVENT_ACTIVE],
-						   &prev->ctx[IEVENT_ACTIVE],
-						   &next->ctx[IEVENT_ACTIVE],
+						   &curr->ctx[EVENT_ACTIVE],
+						   &prev->ctx[EVENT_ACTIVE],
+						   &next->ctx[EVENT_ACTIVE],
 						   active);
-	sprintf(curr->ctx[IEVENT_READ].name, "%s::READ", curr->name);
+	sprintf(curr->ctx[EVENT_READ].name, "%s::READ", curr->name);
 	locate_handler_context(curr,
-						   &curr->ctx[IEVENT_READ],
-						   &prev->ctx[IEVENT_READ],
-						   &next->ctx[IEVENT_READ],
+						   &curr->ctx[EVENT_READ],
+						   &prev->ctx[EVENT_READ],
+						   &next->ctx[EVENT_READ],
 						   read);
-	sprintf(curr->ctx[IEVENT_READCOMPLETE].name, "%s::READCOMPLETE", curr->name);
+	sprintf(curr->ctx[EVENT_READCOMPLETE].name, "%s::READCOMPLETE", curr->name);
 	locate_handler_context(curr,
-						   &curr->ctx[IEVENT_READCOMPLETE],
-						   &prev->ctx[IEVENT_READCOMPLETE],
-						   &next->ctx[IEVENT_READCOMPLETE],
+						   &curr->ctx[EVENT_READCOMPLETE],
+						   &prev->ctx[EVENT_READCOMPLETE],
+						   &next->ctx[EVENT_READCOMPLETE],
 						   read_complete);
-	sprintf(curr->ctx[IEVENT_WRITE].name, "%s::WRITE", curr->name);
+	sprintf(curr->ctx[EVENT_WRITE].name, "%s::WRITE", curr->name);
 	locate_handler_context(curr,
-						   &curr->ctx[IEVENT_WRITE],
-						   &next->ctx[IEVENT_WRITE],
-						   &prev->ctx[IEVENT_WRITE],
+						   &curr->ctx[EVENT_WRITE],
+						   &next->ctx[EVENT_WRITE],
+						   &prev->ctx[EVENT_WRITE],
 						   write);
-	sprintf(curr->ctx[IEVENT_WRITECOMPLETE].name, "%s::WRITECOMPLETE", curr->name);
+	sprintf(curr->ctx[EVENT_WRITECOMPLETE].name, "%s::WRITECOMPLETE", curr->name);
 	locate_handler_context(curr,
-						   &curr->ctx[IEVENT_WRITECOMPLETE],
-						   &next->ctx[IEVENT_WRITECOMPLETE],
-						   &prev->ctx[IEVENT_WRITECOMPLETE],
+						   &curr->ctx[EVENT_WRITECOMPLETE],
+						   &next->ctx[EVENT_WRITECOMPLETE],
+						   &prev->ctx[EVENT_WRITECOMPLETE],
 						   write_complete);
-	sprintf(curr->ctx[IEVENT_ERROR].name, "%s::ERROR", curr->name);
+	sprintf(curr->ctx[EVENT_ERROR].name, "%s::ERROR", curr->name);
 	locate_handler_context(curr,
-						   &curr->ctx[IEVENT_ERROR],
-						   &prev->ctx[IEVENT_ERROR],
-						   &next->ctx[IEVENT_ERROR],
+						   &curr->ctx[EVENT_ERROR],
+						   &prev->ctx[EVENT_ERROR],
+						   &next->ctx[EVENT_ERROR],
 						   error);
-	sprintf(curr->ctx[IEVENT_ERRORCOMPLETE].name, "%s::ERRORCOMPLETE", curr->name);
+	sprintf(curr->ctx[EVENT_ERRORCOMPLETE].name, "%s::ERRORCOMPLETE", curr->name);
 	locate_handler_context(curr,
-						   &curr->ctx[IEVENT_ERRORCOMPLETE],
-						   &prev->ctx[IEVENT_ERRORCOMPLETE],
-						   &next->ctx[IEVENT_ERRORCOMPLETE],
+						   &curr->ctx[EVENT_ERRORCOMPLETE],
+						   &prev->ctx[EVENT_ERRORCOMPLETE],
+						   &next->ctx[EVENT_ERRORCOMPLETE],
 						   error_complete);
 	channelpipeline->numofhandler += 1;
 
-	return ISUCCESS;
+	return SUCCESS;
 }
 
-icode_t fire_pipeline_event(ichannel_t *channel, int event,
-							void *data, ssize_t datalen)
+code_t callup_channel(channel_t *channel, int event,
+					  void *data, ssize_t datalen)
 {
-	ichannelhandler_ctx_t *ctx;
+	channelhandlerctx_t *ctx;
 
 	switch (event) {
-	case IEVENT_ACTIVE:
-	case IEVENT_READ:
-	case IEVENT_READCOMPLETE:
-	case IEVENT_ERROR:
-	case IEVENT_ERRORCOMPLETE:
+	case EVENT_ACTIVE:
+	case EVENT_READ:
+	case EVENT_READCOMPLETE:
+	case EVENT_ERROR:
+	case EVENT_ERRORCOMPLETE:
 		ctx = &channel->pipeline.handler[0].ctx[event];
 		break;
 	default:
@@ -385,43 +385,76 @@ icode_t fire_pipeline_event(ichannel_t *channel, int event,
 		break;
 	}
 
-	return ctx->next(ctx, data, datalen);
+	return callup(ctx, data, datalen);
 }
 
-icode_t fire_ctx_event(ichannelhandler_ctx_t *ctx, int event,
-					   void *data, ssize_t datalen)
+code_t callup_context(channelhandlerctx_t *ctx, int event,
+					  void *data, ssize_t datalen)
 {
 	ctx = &ctx->handler->ctx[event];
-	return ctx->next(ctx, data, datalen);
+	return callup(ctx, data, datalen);
 }
 
-icode_t add_iserver(iserver_config_t *config)
+static void on_after_working(uv_work_t *req, int status)
+{
+	queue_work_t *qwork = containerof(req, queue_work_t, work);
+	calllater_t *cl = containerof(qwork, calllater_t, qwork);
+
+	qwork->after_work(cl, qwork->data, status);
+	ll_del(&qwork->ll);
+	destroy_channel(qwork->ctx->mychannel);
+	ifree(cl);
+}
+
+static void on_working(uv_work_t *req)
+{
+	queue_work_t *qwork = containerof(req, queue_work_t, work);
+	calllater_t *cl = containerof(qwork, calllater_t, qwork);
+
+	qwork->on_work(cl, qwork->data, 1);
+}
+
+void queue_channel_work(channelhandlerctx_t *ctx, void *data,
+						call_later on_work, call_later after_work)
+{
+	calllater_t *cl = icalloc(sizeof(*cl));
+
+	cl->qwork.ctx = ctx; cl->qwork.data = data;
+	cl->qwork.on_work = on_work; cl->qwork.after_work = after_work;
+
+	ll_add_tail(&cl->qwork.ll, &ctx->mychannel->queueworks);
+	ctx->mychannel->refcnt++;
+	uv_queue_work(ctx->mychannel->uvloop, &cl->qwork.work,
+				  on_working, on_after_working);
+}
+
+code_t add_server(server_config_t *config)
 {
 	int i;
 
 	for (i = 0; predefined_server[i].config.servertype; i++) {
 		if (strcmp(config->servertype,
 				   predefined_server[i].config.servertype) == 0) {
-			iserver_t *server = icalloc(sizeof(iserver_t));
+			server_t *server = icalloc(sizeof(server_t));
 
 			INIT_LL_HEAD(&server->channels);
 
-			memcpy(&server->config, config, sizeof(iserver_config_t));
+			memcpy(&server->config, config, sizeof(server_config_t));
 			server->config.servertype = istrdup(config->servertype);
 			server->config.name = istrdup(config->name);
 			server->config.bindaddr = istrdup(config->bindaddr);
 			server->setup_server = predefined_server[i].setup_server;
 			ll_add_tail(&server->ll, &servers);
-			return ISUCCESS;
+			return SUCCESS;
 		}
 	}
-	return IFAIL;
+	return FAIL;
 }
 
 void notify_async_cmd(async_cmd_t *cmd)
 {
 	unsigned long idx = ++call_next % NUM_WORKERS;
-	iserver_worker_t *me = &workers[idx];
+	server_worker_t *me = &workers[idx];
 
 	pthread_spin_lock(&me->cmd_spinlock);
 	ll_add_tail(&cmd->ll, &me->new_cmds);
@@ -433,9 +466,9 @@ void notify_async_cmd(async_cmd_t *cmd)
 static void consume_async_cmd(uv_async_t *handle)
 {
 	LL_HEAD(tmp_list);
-	iserver_worker_t *me = icontainer_of(handle,
-										 iserver_worker_t,
-										 cmd_handle);
+	server_worker_t *me = containerof(handle,
+									  server_worker_t,
+									  cmd_handle);
 	async_cmd_t *cmd, *_cmd;
 
 	pthread_spin_lock(&me->cmd_spinlock);
@@ -458,7 +491,7 @@ static void consume_async_cmd(uv_async_t *handle)
 
 static void worker_thread_f(void *arg)
 {
-	iserver_worker_t *me = (iserver_worker_t *)arg;
+	server_worker_t *me = (server_worker_t *)arg;
 	uv_loop_t *uvloop;
 
 	uvloop = uv_loop_new();
@@ -477,7 +510,7 @@ static void start_workers(void)
 	int i;
 
 	for (i = 0; i < NUM_WORKERS; i++) {
-		iserver_worker_t *worker = &workers[i];
+		server_worker_t *worker = &workers[i];
 		worker->index = i;
 		pthread_spin_init(&worker->cmd_spinlock, PTHREAD_PROCESS_PRIVATE);
 		INIT_LL_HEAD(&worker->new_cmds);
@@ -492,11 +525,11 @@ static void wait_for_thread_start(int nthreads)
 	}
 }
 
-icode_t start_iserver(void)
+code_t start_server(void)
 {
 	uv_signal_t sigpipe;
 	uv_timer_t h_timer;
-	iserver_t *server;
+	server_t *server;
 
 	pthread_mutex_init(&init_lock, NULL);
 	pthread_cond_init(&init_cond, NULL);

@@ -10,36 +10,27 @@
 
 static void on_channel_close(uv_handle_t *handle)
 {
-	ichannel_t *channel = icontainer_of(handle, ichannel_t, h);
+	channel_t *channel = containerof(handle, channel_t, h);
 
-	channel->refcnt--;
-	prlog(LOGD, "on_channel_close - refcnt: %d", channel->refcnt);
-
-	if (channel->refcnt <= 0)
-		destroy_channel(channel);
+	destroy_channel(channel);
 }
 
 static void on_channel_idle_timer_close(uv_handle_t *handle)
 {
-	ichannel_t *channel = icontainer_of(handle, ichannel_t, idle_timer_handle);
+	channel_t *channel = containerof(handle, channel_t, idle_timer_handle);
 
-	channel->refcnt--;
-	prlog(LOGD, "on_channel_idle_timer_close - refcnt: %d", channel->refcnt);
-
-	if (channel->refcnt <= 0)
-		destroy_channel(channel);
+	destroy_channel(channel);
 }
 
 static void on_channel_shutdown(uv_shutdown_t *req, int status)
 {
-	ichannel_t *channel = icontainer_of(req, ichannel_t, shutdown_handle);
+	channel_t *channel = containerof(req, channel_t, shutdown_handle);
 
 	if (status < 0) {
 		prlog(LOGC, "on_channel_shutdown error: %d", status);
-		return;
 	}
 
-	fire_pipeline_event(channel, IEVENT_ERROR, req->data, -1);
+	callup_channel(channel, EVENT_ERROR, req->data, -1);
 
 	uv_read_stop(&channel->h.stream);
 	uv_timer_stop(&channel->idle_timer_handle);
@@ -53,8 +44,15 @@ static void on_channel_shutdown(uv_shutdown_t *req, int status)
 	}
 }
 
-void channel_shutdown(ichannel_t *channel, icode_t icode)
+void channel_shutdown(channel_t *channel, code_t icode)
 {
+	queue_work_t *qwork;
+
+	prlog(LOGD, "Channel shutdown(icode: %d).", icode);
+
+	ll_for_each_entry(qwork, &channel->queueworks, ll)
+		uv_cancel((uv_req_t *)&qwork->work);
+
 	channel->shutdown_handle.data = (void *)icode;
 	uv_shutdown(&channel->shutdown_handle, &channel->h.stream,
 				on_channel_shutdown);
@@ -62,11 +60,11 @@ void channel_shutdown(ichannel_t *channel, icode_t icode)
 
 static void channel_idle_timer_expire(uv_timer_t *handle)
 {
-	channel_shutdown(icontainer_of(handle, ichannel_t, idle_timer_handle),
-					 ITIMEOUT);
+	channel_shutdown(containerof(handle, channel_t, idle_timer_handle),
+					 TIMEOUT);
 }
 
-static void channel_idle_timer_reset(ichannel_t *channel)
+static void channel_idle_timer_reset(channel_t *channel)
 {
 	assert(0 == uv_timer_start(&channel->idle_timer_handle,
 							   channel_idle_timer_expire,
@@ -76,7 +74,7 @@ static void channel_idle_timer_reset(ichannel_t *channel)
 
 static void origin_conn_closed(uv_handle_t *handle)
 {
-	async_cmd_t *cmd = icontainer_of(handle, async_cmd_t, new_connection.tcp);
+	async_cmd_t *cmd = containerof(handle, async_cmd_t, new_connection.tcp);
 
 	cmd->cmd = ACMD_NEW_TCP_CONN;
 	notify_async_cmd(cmd);
@@ -84,7 +82,7 @@ static void origin_conn_closed(uv_handle_t *handle)
 
 static void on_connect_client(uv_stream_t *stream, int status)
 {
-	iserver_t *server = icontainer_of(stream, iserver_t, h);
+	server_t *server = containerof(stream, server_t, h);
 	async_cmd_t *cmd = imalloc(sizeof(async_cmd_t));
 	uv_os_fd_t client_fd;
 
@@ -100,13 +98,13 @@ static void on_connect_client(uv_stream_t *stream, int status)
 
 static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)
 {
-	ichannel_t *channel = icontainer_of(stream, ichannel_t, h);
+	channel_t *channel = containerof(stream, channel_t, h);
 
 	if (datalen > 0) {
 		/* idle timer reset */
 		channel_idle_timer_reset(channel);
-		fire_pipeline_event(channel, IEVENT_READ, buf->base, datalen);
-		fire_pipeline_event(channel, IEVENT_READCOMPLETE, NULL, 0);
+		callup_channel(channel, EVENT_READ, buf->base, datalen);
+		callup_channel(channel, EVENT_READCOMPLETE, NULL, 0);
 		return;
 	}
 	if (datalen == UV_EOF) {
@@ -114,17 +112,14 @@ static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)
 	if (datalen < 0) {
 	}
 
-	channel_shutdown(channel, IPEERCLOSED);
+	channel_shutdown(channel, PEERCLOSED);
 	ifree(buf->base);
 }
 
-int setup_tcp_read(uv_loop_t *uvloop, iserver_worker_t *me,
-				   iserver_t *server, int fd)
+int setup_tcp_read(uv_loop_t *uvloop, server_worker_t *me,
+				   server_t *server, int fd)
 {
-	ichannel_t *channel = create_channel(NULL, NULL);
-
-	prlog(LOGD, "new connection %lu, %d, %s", me->thread_id, fd,
-		  server->config.name);
+	channel_t *channel = create_channel(NULL, NULL);
 
 	assert(0 == uv_tcp_init(uvloop, &channel->h.tcp));
 	assert(0 == uv_tcp_open(&channel->h.tcp, fd));
@@ -141,14 +136,17 @@ int setup_tcp_read(uv_loop_t *uvloop, iserver_worker_t *me,
 
 	ll_add_tail(&channel->ll, &server->channels);
 
-	fire_pipeline_event(channel, IEVENT_ACTIVE, NULL, 0);
+	prlog(LOGD, "Channel(%p) Thread(%lu), FD(%d), Server(%s)",
+		  channel, me->thread_id, fd, server->config.name);
+
+	callup_channel(channel, EVENT_ACTIVE, NULL, 0);
 
 	uv_read_start(&channel->h.stream, uvbuf_alloc, on_data);
 
 	return 1;
 }
 
-int setup_tcp_server(iserver_t *server, uv_loop_t *uvloop)
+int setup_tcp_server(server_t *server, uv_loop_t *uvloop)
 {
 	server->uvloop = uvloop;
 	server->data = NULL;

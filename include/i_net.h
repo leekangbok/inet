@@ -4,36 +4,45 @@
 #include <uv.h>
 #include <llist.h>
 
-#undef icontainer_of
-#define icontainer_of(ptr, type, field) \
+#undef containerof
+#define containerof(ptr, type, field) \
 	((type *) ((char *) (ptr) - ((char *) &((type *) 0)->field)))
 
-typedef enum icode_ {
-	ISUCCESS,
-	IFAIL,
-	ISTOLEN,
-	IPEERCLOSED,
-	ILOCALCLOSED,
-	ITIMEOUT,
-} icode_t;
+typedef enum code_ {
+	SUCCESS,
+	FAIL,
+	STOLEN,
+	PEERCLOSED,
+	LOCALCLOSED,
+	TIMEOUT,
+} code_t;
 
-typedef struct ichannel_ ichannel_t;
-typedef struct ichannelpipeline_ ichannelpipeline_t;
-typedef struct ichannelhandler_ ichannelhandler_t;
-typedef struct ichannelhandler_ctx_ ichannelhandler_ctx_t;
-typedef struct iserver_ iserver_t;
-typedef struct iserver_config_ iserver_config_t;
-typedef struct iserver_worker_ iserver_worker_t;
+typedef struct channel_ channel_t;
+typedef struct channelpipeline_ channelpipeline_t;
+typedef struct channelhandler_ channelhandler_t;
+typedef struct channelhandlerctx_ channelhandlerctx_t;
+typedef struct server_ server_t;
+typedef struct server_config_ server_config_t;
+typedef struct server_worker_ server_worker_t;
 typedef struct callback_ callback_t;
 typedef struct calllater_ calllater_t;
 
-typedef icode_t (*channelhandler_f)(ichannelhandler_ctx_t *ctx, void *data,
-									ssize_t datalen);
-typedef icode_t (*call_later)(calllater_t *c, void *data, int status);
+typedef code_t (*channelhandler_f)(channelhandlerctx_t *ctx, void *data,
+								   ssize_t datalen);
+typedef code_t (*call_later)(calllater_t *c, void *data, int status);
 typedef void (*data_destroy_f)(void *data);
 
 typedef struct {
-	ichannel_t *channel;
+	struct ll_head ll;
+	channelhandlerctx_t *ctx;
+	call_later on_work;
+	call_later after_work;
+	void *data;
+	uv_work_t work;
+} queue_work_t;
+
+typedef struct {
+	channel_t *channel;
 	void *data;
 	ssize_t datalen;
 	uv_buf_t buf;
@@ -54,9 +63,9 @@ struct callback_ {
 
 struct calllater_ {
 	struct ll_head callbacks;
-	ichannelhandler_ctx_t *ctx;
 	union {
 		write_calllater_t write;
+		queue_work_t qwork;
 	};
 };
 
@@ -67,14 +76,14 @@ typedef struct {
 	int cmd;
 	union {
 		struct {
-			iserver_t *server;
+			server_t *server;
 			uv_tcp_t tcp;
 			int fd;
 		} new_connection;
 	};
 } async_cmd_t;
 
-struct iserver_worker_ {
+struct server_worker_ {
 	int index;
 	pthread_spinlock_t cmd_spinlock;
 	struct ll_head new_cmds;
@@ -82,72 +91,72 @@ struct iserver_worker_ {
 	uv_thread_t thread_id;
 };
 
-#define IHANDLER_NAME_MAX 32
+#define HANDLER_NAME_MAX 32
 
-struct ichannelhandler_ctx_ {
-	channelhandler_f next;
-	ichannelhandler_ctx_t *next_ctx;
+struct channelhandlerctx_ {
+	channelhandlerctx_t *next_ctx;
 	channelhandler_f operation;
-	ichannelhandler_t *handler;
-	char name[IHANDLER_NAME_MAX + 32];
+	channelhandler_t *handler;
+	char name[HANDLER_NAME_MAX + 32];
 #define mychannel handler->pipeline->channel
 };
 
-#define IEVENT_ACTIVE		0
-#define IEVENT_READ			1
-#define IEVENT_READCOMPLETE	2
-#define IEVENT_WRITE			3
-#define IEVENT_WRITECOMPLETE	4
-#define IEVENT_ERROR			5
-#define IEVENT_ERRORCOMPLETE	6
-#define IEVENT_MAX			7
+#define EVENT_ACTIVE		0
+#define EVENT_READ			1
+#define EVENT_READCOMPLETE	2
+#define EVENT_WRITE			3
+#define EVENT_WRITECOMPLETE	4
+#define EVENT_ERROR			5
+#define EVENT_ERRORCOMPLETE	6
+#define EVENT_MAX			7
 
-struct ichannelhandler_ {
-	ichannelhandler_ctx_t ctx[IEVENT_MAX];
+struct channelhandler_ {
+	channelhandlerctx_t ctx[EVENT_MAX];
 	void *data;
 	data_destroy_f data_destroy;
-	ichannelpipeline_t *pipeline;
-	char name[IHANDLER_NAME_MAX];
+	channelpipeline_t *pipeline;
+	char name[HANDLER_NAME_MAX];
 };
 
-struct ichannelpipeline_ {
+struct channelpipeline_ {
 	int numofhandler;
-	ichannelhandler_t *handler;
-	ichannel_t *channel;
+	channelhandler_t *handler;
+	channel_t *channel;
 };
 
-struct ichannel_ {
+struct channel_ {
 	struct ll_head ll;
-	ichannelpipeline_t pipeline;
+	channelpipeline_t pipeline;
 	union {
 		uv_handle_t handle;
 		uv_stream_t stream;
 		uv_tcp_t tcp;
 		uv_udp_t udp;
 	} h;
+	struct ll_head queueworks;
 	int refcnt;
 	uv_timer_t idle_timer_handle;
 	uv_shutdown_t shutdown_handle;
 	void *data;
 	data_destroy_f data_destroy;
 	uv_loop_t *uvloop;
-	iserver_t *server;
+	server_t *server;
 };
 
-struct iserver_config_ {
+struct server_config_ {
 	const char *servertype;
 	const char *name;
 	const char *bindaddr;
 	int bindport;
 	int idle_timeout;
 #define MAXSIGNUM 64
-	void (*signals_cb[MAXSIGNUM])(iserver_t *server, int signum);
-	void (*setup_server)(iserver_t *server);
+	void (*signals_cb[MAXSIGNUM])(server_t *server, int signum);
+	void (*setup_server)(server_t *server);
 	void (*setup_uvhandle)(uv_handle_t *handle, const char *what);
-	void (*setup_channel)(ichannel_t *channel);
+	void (*setup_channel)(channel_t *channel);
 };
 
-struct iserver_ {
+struct server_ {
 	struct ll_head ll;
 	struct ll_head channels;
 	union {
@@ -164,8 +173,8 @@ struct iserver_ {
 #define SERVERTYPE_TCP 1
 #define SERVERTYPE_UDP 2
 	int servertype;
-	iserver_config_t config;
-	int (*setup_server)(iserver_t *server, uv_loop_t *uvloop);
+	server_config_t config;
+	int (*setup_server)(server_t *server, uv_loop_t *uvloop);
 	uv_loop_t *uvloop;
 	void *data;
 };
@@ -173,25 +182,28 @@ struct iserver_ {
 calllater_t *create_calllater(void);
 void add_calllater(calllater_t *c, call_later f, void *data, data_destroy_f df);
 void call_callbacks(calllater_t *c, int status);
+void queue_channel_work(channelhandlerctx_t *ctx, void *data,
+						call_later on_work, call_later after_work);
 void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
 				 uv_buf_t *buf);
 void notify_async_cmd(async_cmd_t *cmd);
-icode_t fire_pipeline_event(ichannel_t *channel, int ihandler_type,
-							void *data, ssize_t datalen);
-icode_t fire_ctx_event(ichannelhandler_ctx_t *ctx,
-					   int event, void *data, ssize_t datalen);
-icode_t add_channelhandler(ichannel_t *channel, const char *name,
-						   channelhandler_f active,
-						   channelhandler_f read,
-						   channelhandler_f read_complete,
-						   channelhandler_f write,
-						   channelhandler_f write_complete,
-						   channelhandler_f error,
-						   channelhandler_f error_complete,
-						   void *data, data_destroy_f data_destroy);
-ichannel_t *create_channel(void *data, data_destroy_f data_destroy);
-void destroy_channel(ichannel_t *channel);
-icode_t add_iserver(iserver_config_t *config);
-icode_t start_iserver(void);
+code_t callup(channelhandlerctx_t *ctx, void *data, ssize_t datalen);
+code_t callup_channel(channel_t *channel, int event,
+					  void *data, ssize_t datalen);
+code_t callup_context(channelhandlerctx_t *ctx, int event,
+					  void *data, ssize_t datalen);
+code_t add_channelhandler(channel_t *channel, const char *name,
+						  channelhandler_f active,
+						  channelhandler_f read,
+						  channelhandler_f read_complete,
+						  channelhandler_f write,
+						  channelhandler_f write_complete,
+						  channelhandler_f error,
+						  channelhandler_f error_complete,
+						  void *data, data_destroy_f data_destroy);
+channel_t *create_channel(void *data, data_destroy_f data_destroy);
+void destroy_channel(channel_t *channel);
+code_t add_server(server_config_t *config);
+code_t start_server(void);
 
 #endif
