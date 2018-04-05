@@ -108,7 +108,8 @@ struct channelhandlerctx_ {
 #define EVENT_WRITECOMPLETE	4
 #define EVENT_ERROR			5
 #define EVENT_ERRORCOMPLETE	6
-#define EVENT_MAX			7
+#define EVENT_IDLE			7
+#define EVENT_MAX			8
 
 struct channelhandler_ {
 	channelhandlerctx_t ctx[EVENT_MAX];
@@ -135,6 +136,7 @@ struct channel_ {
 	} h;
 	struct ll_head queueworks;
 	int refcnt;
+	int idle_timeout;
 	uv_timer_t idle_timer_handle;
 	uv_shutdown_t shutdown_handle;
 	void *data;
@@ -149,6 +151,7 @@ struct server_config_ {
 	const char *bindaddr;
 	int bindport;
 	int idle_timeout;
+	int idle_notify;
 #define MAXSIGNUM 64
 	void (*signals_cb[MAXSIGNUM])(server_t *server, int signum);
 	void (*setup_server)(server_t *server);
@@ -196,6 +199,7 @@ code_t callup_context(channelhandlerctx_t *ctx, int event,
 					  void *data, ssize_t datalen);
 code_t add_channelhandler(channel_t *channel, const char *name,
 						  channelhandler_f active,
+						  channelhandler_f idle,
 						  channelhandler_f read,
 						  channelhandler_f read_complete,
 						  channelhandler_f write,

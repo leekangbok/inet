@@ -61,19 +61,19 @@ void channel_shutdown(channel_t *channel, code_t icode)
 
 static void channel_idle_timer_expire(uv_timer_t *handle)
 {
-	channel_shutdown(containerof(handle, channel_t, idle_timer_handle),
-					 TIMEOUT);
+	channel_t *channel = containerof(handle, channel_t, idle_timer_handle);
+
+	--channel->idle_timeout;
+	if (channel->server->config.idle_timeout && (channel->idle_timeout == 0))
+		channel_shutdown(channel, TIMEOUT);
+	else
+		callup_channel(channel, EVENT_IDLE,
+					   (void *)(long)(channel->idle_timeout), 0);
 }
 
 void channel_idle_timer_reset(channel_t *channel)
 {
-	if (channel->server->config.idle_timeout == 0)
-		return;
-
-	assert(0 == uv_timer_start(&channel->idle_timer_handle,
-							   channel_idle_timer_expire,
-							   channel->server->config.idle_timeout * 1000,
-							   0));
+	channel->idle_timeout = channel->server->config.idle_timeout;
 }
 
 static void origin_conn_closed(uv_handle_t *handle)
@@ -128,7 +128,7 @@ void done_stream_write(uv_write_t *req, int status)
 	if (status) {
 		prlog(LOGC, "Write error %s.", uv_err_name(status));
 	}
-	else if (!uv_is_closing((uv_handle_t *)&channel->idle_timer_handle)) {
+	else {
 		channel_idle_timer_reset(channel);
 	}
 	run_calllater(cl, status);
@@ -158,6 +158,10 @@ int create_tcp_channel(uv_loop_t *uvloop, server_worker_t *me,
 
 	uv_timer_init(uvloop, &channel->idle_timer_handle);
 	channel_idle_timer_reset(channel);
+	assert(0 == uv_timer_start(&channel->idle_timer_handle,
+							   channel_idle_timer_expire,
+							   1000,
+							   1000));
 
 	pthread_spin_lock(&server->channels_spinlock);
 	ll_add_tail(&channel->ll, &server->channels);

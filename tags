@@ -167,9 +167,10 @@ config	include/i_net.h	/^	server_config_t config;$/;"	m	struct:server_
 consume_async_cmd	src/i_net.c	/^static void consume_async_cmd(uv_async_t *handle)$/;"	f	file:
 containerof	include/i_net.h	7;"	d
 containerof	include/i_net.h	8;"	d
-create_calllater	src/i_net.c	/^calllater_t *create_calllater(void)$/;"	f
+create_calllater	src/i_net.c	/^static calllater_t *create_calllater(void)$/;"	f	file:
 create_channel	src/i_net.c	/^channel_t *create_channel(void *data, data_destroy_f data_destroy)$/;"	f
 create_tcp_channel	src/i_net_tcp.c	/^int create_tcp_channel(uv_loop_t *uvloop, server_worker_t *me,$/;"	f
+create_write_req	src/i_net.c	/^calllater_t *create_write_req(void *data, ssize_t datalen)$/;"	f
 ctx	include/i_net.h	/^	channelhandlerctx_t *ctx;$/;"	m	struct:__anon1
 ctx	include/i_net.h	/^	channelhandlerctx_t ctx[EVENT_MAX];$/;"	m	struct:channelhandler_
 data	include/i_net.h	/^	void *data;$/;"	m	struct:__anon1
@@ -187,7 +188,7 @@ dbl	src/i_mem.c	/^	double dbl;$/;"	m	union:alignment0	file:
 def_inbound_handler	src/i_net.c	/^static code_t def_inbound_handler(channelhandlerctx_t *ctx, void *data,$/;"	f	file:
 def_outbound_handler	src/i_net.c	/^static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,$/;"	f	file:
 destroy_channel	src/i_net.c	/^void destroy_channel(channel_t *channel)$/;"	f
-done_stream_write	src/i_net.c	/^void done_stream_write(uv_write_t *req, int status)$/;"	f
+done_stream_write	src/i_net_tcp.c	/^void done_stream_write(uv_write_t *req, int status)$/;"	f
 expire_timer	src/i_net.c	/^static void expire_timer(uv_timer_t *handle)$/;"	f	file:
 f	include/i_net.h	/^	call_later f;$/;"	m	struct:callback_
 fd	include/i_net.h	/^			int fd;$/;"	m	struct:__anon5::__anon6::__anon7
@@ -290,7 +291,6 @@ prlog	src/i_print.c	/^void prlog(int level, const char *fmt, ...)$/;"	f
 ptr	src/i_mem.c	/^	void *ptr;$/;"	m	union:alignment0	file:
 queue_work	src/i_net.c	/^void queue_work(channelhandlerctx_t *ctx, void *data, call_later on_work,$/;"	f
 queue_work_t	include/i_net.h	/^} queue_work_t;$/;"	t	typeref:struct:__anon1
-queue_write	src/i_net.c	/^calllater_t *queue_write(void *data, ssize_t datalen)$/;"	f
 queueworks	include/i_net.h	/^	struct ll_head queueworks;$/;"	m	struct:channel_	typeref:struct:channel_::ll_head
 qwork	include/i_net.h	/^		queue_work_t qwork;$/;"	m	union:calllater_::__anon4
 read_stage1	sample_app/echo/echo.c	/^static code_t read_stage1(channelhandlerctx_t *ctx,$/;"	f	file:

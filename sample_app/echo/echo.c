@@ -28,14 +28,12 @@ code_t on_work(calllater_t *cl, void *data, int status)
 	return SUCCESS;
 }
 
-#if 0
-static code_t active_stage1(channelhandlerctx_t *ctx,
+static code_t idle_stage1(channelhandlerctx_t *ctx,
 							void *data, ssize_t datalen)
 {
-	prlog(LOGD, "%s", ctx->name);
+	prlog(LOGD, "%s(idle_timeout: %d)", ctx->name, (long)data);
 	return callup(ctx, data, datalen);
 }
-#endif
 
 static code_t read_stage1(channelhandlerctx_t *ctx,
 						  void *data, ssize_t datalen)
@@ -115,6 +113,7 @@ void setup_echo_channel(channel_t *channel)
 {
 	add_channelhandler(channel, "echo_stage1",
 					   NULL,
+					   idle_stage1,
 					   read_stage1,
 					   NULL,
 					   write_stage1,
@@ -131,9 +130,11 @@ void setup_echo_channel(channel_t *channel)
 					   NULL,
 					   NULL,
 					   NULL,
+					   NULL,
 					   NULL, NULL);
 
 	add_channelhandler(channel, "echo_stage3",
+					   NULL,
 					   NULL,
 					   read_stage3,
 					   NULL,

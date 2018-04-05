@@ -178,7 +178,7 @@ static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,
 static code_t def_inbound_handler(channelhandlerctx_t *ctx, void *data,
 								  ssize_t datalen)
 {
-	if (datalen >= 0)
+	if (datalen > 0)
 		ifree(data);
 	return SUCCESS;
 }
@@ -187,6 +187,8 @@ static void set_def_inbound_handler(channelhandler_t *channelhandler)
 {
 	channelhandler->ctx[EVENT_ACTIVE].handler = channelhandler;
 	channelhandler->ctx[EVENT_ACTIVE].operation = def_inbound_handler;
+	channelhandler->ctx[EVENT_IDLE].handler = channelhandler;
+	channelhandler->ctx[EVENT_IDLE].operation = def_inbound_handler;
 	channelhandler->ctx[EVENT_READ].handler = channelhandler;
 	channelhandler->ctx[EVENT_READ].operation = def_inbound_handler;
 	channelhandler->ctx[EVENT_READCOMPLETE].handler = channelhandler;
@@ -297,6 +299,7 @@ static void locate_handler_context(channelhandler_t *handler,
 
 code_t add_channelhandler(channel_t *channel, const char *name,
 						  channelhandler_f active,
+						  channelhandler_f idle,
 						  channelhandler_f read,
 						  channelhandler_f read_complete,
 						  channelhandler_f write,
@@ -325,6 +328,12 @@ code_t add_channelhandler(channel_t *channel, const char *name,
 						   &prev->ctx[EVENT_ACTIVE],
 						   &next->ctx[EVENT_ACTIVE],
 						   active);
+	sprintf(curr->ctx[EVENT_IDLE].name, "%s::IDLE", curr->name);
+	locate_handler_context(curr,
+						   &curr->ctx[EVENT_IDLE],
+						   &prev->ctx[EVENT_IDLE],
+						   &next->ctx[EVENT_IDLE],
+						   idle);
 	sprintf(curr->ctx[EVENT_READ].name, "%s::READ", curr->name);
 	locate_handler_context(curr,
 						   &curr->ctx[EVENT_READ],
@@ -373,6 +382,7 @@ code_t callup_channel(channel_t *channel, int event,
 
 	switch (event) {
 	case EVENT_ACTIVE:
+	case EVENT_IDLE:
 	case EVENT_READ:
 	case EVENT_READCOMPLETE:
 	case EVENT_ERROR:
