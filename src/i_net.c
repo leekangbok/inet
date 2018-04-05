@@ -102,28 +102,31 @@ void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
 
 calllater_t *create_calllater(void)
 {
-	calllater_t *c = icalloc(sizeof(calllater_t));
+	calllater_t *cl = icalloc(sizeof(calllater_t));
 
-	INIT_LL_HEAD(&c->callbacks);
+	INIT_LL_HEAD(&cl->callbacks);
 
-	return c;
+	return cl;
 }
 
-void add_calllater(calllater_t *c, call_later f, void *data, data_destroy_f df)
+calllater_t *add_calllater(calllater_t *cl, call_later f, void *data,
+						   data_destroy_f df)
 {
 	callback_t *cb = icalloc(sizeof(callback_t));
 
 	cb->f = f; cb->data = data; cb->data_destroy = df;
 
-	ll_add_tail(&cb->ll, &c->callbacks);
+	ll_add_tail(&cb->ll, &cl->callbacks);
+
+	return cl;
 }
 
-void call_callbacks(calllater_t *c, int status)
+void run_calllater(calllater_t *cl, int status)
 {
 	callback_t *cb, *_cb;
 
-	ll_for_each_entry_safe(cb, _cb, &c->callbacks, ll) {
-		cb->f(c, cb->data, status);
+	ll_for_each_entry_safe(cb, _cb, &cl->callbacks, ll) {
+		cb->f(cl, cb->data, status);
 		ll_del(&cb->ll);
 		ifree(cb);
 	}
@@ -131,42 +134,55 @@ void call_callbacks(calllater_t *c, int status)
 
 void done_stream_write(uv_write_t *req, int status)
 {
-	calllater_t *c = containerof(req, calllater_t, write.req.write);
-	channel_t *channel = c->write.channel;
+	calllater_t *cl = containerof(req, calllater_t, write.req.write);
+	channel_t *channel = cl->write.channel;
 
-	if (status) {
-		prlog(LOGC, "Write error %s\n", uv_err_name(status));
-	}
+	if (status)
+		prlog(LOGC, "Write error %s.", uv_err_name(status));
 
-	call_callbacks(c, status);
+	run_calllater(cl, status);
 
-	callup_channel(c->write.channel, EVENT_WRITECOMPLETE,
+	callup_channel(cl->write.channel, EVENT_WRITECOMPLETE,
 				   (void *)(long)status, -1);
 
-	ifree(c->write.data);
-	ifree(c);
+	ifree(cl->write.data);
+	ifree(cl);
 
 	destroy_channel(channel);
+}
+
+calllater_t *queue_write(void *data, ssize_t datalen)
+{
+	calllater_t *cl = create_calllater();
+
+	cl->write.data = data;
+	cl->write.datalen = datalen;
+
+	return cl;
 }
 
 static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,
 								   ssize_t datalen)
 {
-	calllater_t *c = (calllater_t *)data;
+	calllater_t *cl = (calllater_t *)data;
+	int status = UV_ENOTCONN;
 
-	if (c == NULL || datalen <= 0) {
+	if (cl == NULL || datalen <= 0) {
 		return SUCCESS;
 	}
 
 	ctx->mychannel->refcnt++;
-	c->write.channel = ctx->mychannel;
-	c->write.buf = uv_buf_init(c->write.data, c->write.datalen);
+	cl->write.channel = ctx->mychannel;
+	cl->write.buf = uv_buf_init(cl->write.data, cl->write.datalen);
 
 	switch (ctx->mychannel->server->servertype) {
 	case SERVERTYPE_TCP:
-		if (uv_write(&c->write.req.write, &ctx->mychannel->h.stream,
-					 &c->write.buf, 1, done_stream_write) != 0) {
-			done_stream_write(&c->write.req.write, -1);
+		if (!uv_is_closing(&ctx->mychannel->h.handle)) {
+			status = uv_write(&cl->write.req.write, &ctx->mychannel->h.stream,
+							  &cl->write.buf, 1, done_stream_write);
+		}
+		if (status != 0) {
+			done_stream_write(&cl->write.req.write, status);
 		}
 		break;
 	case SERVERTYPE_UDP:
@@ -260,7 +276,9 @@ void destroy_channel(channel_t *channel)
 		channel->data_destroy(channel->data);
 		channel->data = NULL;
 	}
+	pthread_spin_lock(&channel->server->channels_spinlock);
 	ll_del(&channel->ll);
+	pthread_spin_unlock(&channel->server->channels_spinlock);
 	ifree(channel);
 }
 
@@ -414,10 +432,10 @@ static void on_working(uv_work_t *req)
 	qwork->on_work(cl, qwork->data, 1);
 }
 
-void queue_channel_work(channelhandlerctx_t *ctx, void *data,
-						call_later on_work, call_later after_work)
+void queue_work(channelhandlerctx_t *ctx, void *data, call_later on_work,
+				call_later after_work)
 {
-	calllater_t *cl = icalloc(sizeof(*cl));
+	calllater_t *cl = create_calllater();
 
 	cl->qwork.ctx = ctx; cl->qwork.data = data;
 	cl->qwork.on_work = on_work; cl->qwork.after_work = after_work;
@@ -437,6 +455,7 @@ code_t add_server(server_config_t *config)
 				   predefined_server[i].config.servertype) == 0) {
 			server_t *server = icalloc(sizeof(server_t));
 
+			pthread_spin_init(&server->channels_spinlock, PTHREAD_PROCESS_PRIVATE);
 			INIT_LL_HEAD(&server->channels);
 
 			memcpy(&server->config, config, sizeof(server_config_t));

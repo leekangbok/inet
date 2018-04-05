@@ -29,7 +29,7 @@ typedef struct calllater_ calllater_t;
 
 typedef code_t (*channelhandler_f)(channelhandlerctx_t *ctx, void *data,
 								   ssize_t datalen);
-typedef code_t (*call_later)(calllater_t *c, void *data, int status);
+typedef code_t (*call_later)(calllater_t *cl, void *data, int status);
 typedef void (*data_destroy_f)(void *data);
 
 typedef struct {
@@ -158,6 +158,7 @@ struct server_config_ {
 
 struct server_ {
 	struct ll_head ll;
+	pthread_spinlock_t channels_spinlock;
 	struct ll_head channels;
 	union {
 		uv_handle_t handle;
@@ -180,10 +181,12 @@ struct server_ {
 };
 
 calllater_t *create_calllater(void);
-void add_calllater(calllater_t *c, call_later f, void *data, data_destroy_f df);
-void call_callbacks(calllater_t *c, int status);
-void queue_channel_work(channelhandlerctx_t *ctx, void *data,
-						call_later on_work, call_later after_work);
+calllater_t *add_calllater(calllater_t *cl, call_later f, void *data,
+						   data_destroy_f df);
+void run_calllater(calllater_t *cl, int status);
+calllater_t *queue_write(void *data, ssize_t datalen);
+void queue_work(channelhandlerctx_t *ctx, void *data, call_later on_work,
+				call_later after_work);
 void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
 				 uv_buf_t *buf);
 void notify_async_cmd(async_cmd_t *cmd);

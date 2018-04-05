@@ -1,3 +1,6 @@
+#include <unistd.h>
+#include <string.h>
+
 #include <i_mem.h>
 
 #include <echo/echo.h>
@@ -6,32 +9,22 @@
 code_t on_after_work(calllater_t *cl, void *data, int status)
 {
 	prlog(LOGD, "complete(%p), status: %d", cl, status);
-	/*
-	calllater_t *c = create_calllater();
-	calllater_t *work_req = containerof(req, calllater_t, work);
-	channelhandlerctx_t *ctx = req->data;
+	if (status < 0)
+		return FAIL;
 
-	prlog(LOGD, "complete(%p)", work_req);
-	ifree(work_req);
+	char *senddata = icalloc(100);
 
-	c->write.data = icalloc(100);
-	sprintf(c->write.data, "%s\n", "hello telnet");
-	c->write.datalen = strlen(c->write.data);
+	sprintf(senddata, "%s\n", "hello telnet");
+	calllater_t *wcl = queue_write(senddata, strlen(senddata));
 
-	callup_context(ctx, EVENT_WRITE, c, sizeof(calllater_t));
-
-	destroy_channel(ctx->mychannel);
-	*/
+	callup_context(cl->qwork.ctx, EVENT_WRITE, wcl, sizeof(calllater_t));
 	return SUCCESS;
 }
 
 code_t on_work(calllater_t *cl, void *data, int status)
 {
-	// "Work"
-	//if (random() % 5 == 0) {
 	prlog(LOGD, "Sleeping...");
-	sleep(3);
-	//}
+	sleep(5);
 	return SUCCESS;
 }
 
@@ -61,7 +54,8 @@ static code_t write_stage1(channelhandlerctx_t *ctx,
 static code_t active_stage2(channelhandlerctx_t *ctx,
 							void *data, ssize_t datalen)
 {
-	queue_channel_work(ctx, NULL, on_work, on_after_work);
+	queue_work(ctx, NULL, on_work, on_after_work);
+
 	prlog(LOGD, "%s", ctx->name);
 	return callup(ctx, data, datalen);
 }
@@ -89,16 +83,11 @@ static code_t write_and_close(calllater_t *c, void *data, int status)
 static code_t read_stage3(channelhandlerctx_t *ctx,
 						  void *data, ssize_t datalen)
 {
-	calllater_t *c = create_calllater();
-
+	calllater_t *cl = add_calllater(queue_write(data, datalen),
+									write_and_close, ctx, NULL);
 	prlog(LOGD, "%s", ctx->name);
 
-	c->write.data = data;
-	c->write.datalen = datalen;
-
-	add_calllater(c, write_and_close, ctx, NULL);
-
-	return callup_context(ctx, EVENT_WRITE, c, sizeof(calllater_t));
+	return callup_context(ctx, EVENT_WRITE, cl, sizeof(calllater_t));
 }
 
 static code_t write_stage3(channelhandlerctx_t *ctx,

@@ -26,9 +26,8 @@ static void on_channel_shutdown(uv_shutdown_t *req, int status)
 {
 	channel_t *channel = containerof(req, channel_t, shutdown_handle);
 
-	if (status < 0) {
-		prlog(LOGC, "on_channel_shutdown error: %d", status);
-	}
+	if (status < 0)
+		prlog(LOGC, "Channel Shutdown error: %s", uv_err_name(status));
 
 	callup_channel(channel, EVENT_ERROR, req->data, -1);
 
@@ -134,7 +133,9 @@ int setup_tcp_read(uv_loop_t *uvloop, server_worker_t *me,
 	uv_timer_init(uvloop, &channel->idle_timer_handle);
 	channel_idle_timer_reset(channel);
 
+	pthread_spin_lock(&server->channels_spinlock);
 	ll_add_tail(&channel->ll, &server->channels);
+	pthread_spin_unlock(&server->channels_spinlock);
 
 	prlog(LOGD, "Channel(%p) Thread(%lu), FD(%d), Server(%s)",
 		  channel, me->thread_id, fd, server->config.name);
