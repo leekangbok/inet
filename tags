@@ -169,6 +169,7 @@ containerof	include/i_net.h	7;"	d
 containerof	include/i_net.h	8;"	d
 create_calllater	src/i_net.c	/^calllater_t *create_calllater(void)$/;"	f
 create_channel	src/i_net.c	/^channel_t *create_channel(void *data, data_destroy_f data_destroy)$/;"	f
+create_tcp_channel	src/i_net_tcp.c	/^int create_tcp_channel(uv_loop_t *uvloop, server_worker_t *me,$/;"	f
 ctx	include/i_net.h	/^	channelhandlerctx_t *ctx;$/;"	m	struct:__anon1
 ctx	include/i_net.h	/^	channelhandlerctx_t ctx[EVENT_MAX];$/;"	m	struct:channelhandler_
 data	include/i_net.h	/^	void *data;$/;"	m	struct:__anon1
@@ -187,7 +188,7 @@ def_inbound_handler	src/i_net.c	/^static code_t def_inbound_handler(channelhandl
 def_outbound_handler	src/i_net.c	/^static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,$/;"	f	file:
 destroy_channel	src/i_net.c	/^void destroy_channel(channel_t *channel)$/;"	f
 done_stream_write	src/i_net.c	/^void done_stream_write(uv_write_t *req, int status)$/;"	f
-expire_gh_timer	src/i_net.c	/^static void expire_gh_timer(uv_timer_t *handle)$/;"	f	file:
+expire_timer	src/i_net.c	/^static void expire_timer(uv_timer_t *handle)$/;"	f	file:
 f	include/i_net.h	/^	call_later f;$/;"	m	struct:callback_
 fd	include/i_net.h	/^			int fd;$/;"	m	struct:__anon5::__anon6::__anon7
 first	include/llist.h	/^	struct hll_node *first;$/;"	m	struct:hll_head	typeref:struct:hll_head::hll_node
@@ -317,7 +318,6 @@ setup_channel	include/i_net.h	/^	void (*setup_channel)(channel_t *channel);$/;"	
 setup_echo_channel	sample_app/echo/echo.c	/^void setup_echo_channel(channel_t *channel)$/;"	f
 setup_server	include/i_net.h	/^	int (*setup_server)(server_t *server, uv_loop_t *uvloop);$/;"	m	struct:server_
 setup_server	include/i_net.h	/^	void (*setup_server)(server_t *server);$/;"	m	struct:server_config_
-setup_tcp_read	src/i_net_tcp.c	/^int setup_tcp_read(uv_loop_t *uvloop, server_worker_t *me,$/;"	f
 setup_tcp_server	src/i_net_tcp.c	/^int setup_tcp_server(server_t *server, uv_loop_t *uvloop)$/;"	f
 setup_uvhandle	include/i_net.h	/^	void (*setup_uvhandle)(uv_handle_t *handle, const char *what);$/;"	m	struct:server_config_
 shutdown_handle	include/i_net.h	/^	uv_shutdown_t shutdown_handle;$/;"	m	struct:channel_

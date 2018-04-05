@@ -72,12 +72,13 @@ next:
 		signal_handle->signal_cb = server->config.signals_cb[i];
 		signal_handle->server = server;
 		ll_add_tail(&signal_handle->ll, head);
-		prlog(LOGD, "'%s' server signal(%d) add handler.", server->config.name, i);
+		prlog(LOGD, "'%s' server signal(%d) add handler.",
+			  server->config.name, i);
 	}
 	return 1;
 }
 
-static void expire_gh_timer(uv_timer_t *handle)
+static void expire_timer(uv_timer_t *handle)
 {
 	prlog(LOGD, "amount of alloc: %zu bytes", iamount_of());
 }
@@ -137,13 +138,15 @@ void done_stream_write(uv_write_t *req, int status)
 	calllater_t *cl = containerof(req, calllater_t, write.req.write);
 	channel_t *channel = cl->write.channel;
 
-	if (status)
+	if (status) {
 		prlog(LOGC, "Write error %s.", uv_err_name(status));
-
+	}
+	else if (!uv_is_closing((uv_handle_t *)&channel->idle_timer_handle)) {
+		channel_idle_timer_reset(channel);
+	}
 	run_calllater(cl, status);
 
-	callup_channel(cl->write.channel, EVENT_WRITECOMPLETE,
-				   (void *)(long)status, -1);
+	callup_channel(channel, EVENT_WRITECOMPLETE, (void *)(long)status, -1);
 
 	ifree(cl->write.data);
 	ifree(cl);
@@ -498,8 +501,8 @@ static void consume_async_cmd(uv_async_t *handle)
 	ll_for_each_entry_safe(cmd, _cmd, &tmp_list, ll) {
 		switch (cmd->cmd) {
 		case ACMD_NEW_TCP_CONN:
-			setup_tcp_read(handle->loop, me, cmd->new_connection.server,
-						   cmd->new_connection.fd);
+			create_tcp_channel(handle->loop, me, cmd->new_connection.server,
+							   cmd->new_connection.fd);
 		default:
 			break;
 		}
@@ -567,7 +570,7 @@ code_t start_server(void)
 	uv_signal_start(&sigpipe, signal_cb, SIGPIPE);
 
 	uv_timer_init(uv_default_loop(), &h_timer);
-	uv_timer_start(&h_timer, expire_gh_timer, 1000, 1000);
+	uv_timer_start(&h_timer, expire_timer, 1000, 1000);
 
 	uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 

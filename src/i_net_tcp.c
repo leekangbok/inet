@@ -63,8 +63,11 @@ static void channel_idle_timer_expire(uv_timer_t *handle)
 					 TIMEOUT);
 }
 
-static void channel_idle_timer_reset(channel_t *channel)
+void channel_idle_timer_reset(channel_t *channel)
 {
+	if (channel->server->config.idle_timeout == 0)
+		return;
+
 	assert(0 == uv_timer_start(&channel->idle_timer_handle,
 							   channel_idle_timer_expire,
 							   channel->server->config.idle_timeout * 1000,
@@ -115,8 +118,8 @@ static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)
 	ifree(buf->base);
 }
 
-int setup_tcp_read(uv_loop_t *uvloop, server_worker_t *me,
-				   server_t *server, int fd)
+int create_tcp_channel(uv_loop_t *uvloop, server_worker_t *me,
+					   server_t *server, int fd)
 {
 	channel_t *channel = create_channel(NULL, NULL);
 
@@ -137,7 +140,7 @@ int setup_tcp_read(uv_loop_t *uvloop, server_worker_t *me,
 	ll_add_tail(&channel->ll, &server->channels);
 	pthread_spin_unlock(&server->channels_spinlock);
 
-	prlog(LOGD, "Channel(%p) Thread(%lu), FD(%d), Server(%s)",
+	prlog(LOGD, "New Channel(%p) Thread(%lu), FD(%d), Server(%s)",
 		  channel, me->thread_id, fd, server->config.name);
 
 	callup_channel(channel, EVENT_ACTIVE, NULL, 0);

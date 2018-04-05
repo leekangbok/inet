@@ -24,7 +24,7 @@ code_t on_after_work(calllater_t *cl, void *data, int status)
 code_t on_work(calllater_t *cl, void *data, int status)
 {
 	prlog(LOGD, "Sleeping...");
-	sleep(5);
+	sleep(1);
 	return SUCCESS;
 }
 
