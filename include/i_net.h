@@ -180,11 +180,10 @@ struct server_ {
 	void *data;
 };
 
-calllater_t *create_calllater(void);
 calllater_t *add_calllater(calllater_t *cl, call_later f, void *data,
 						   data_destroy_f df);
 void run_calllater(calllater_t *cl, int status);
-calllater_t *queue_write(void *data, ssize_t datalen);
+calllater_t *create_write_req(void *data, ssize_t datalen);
 void queue_work(channelhandlerctx_t *ctx, void *data, call_later on_work,
 				call_later after_work);
 void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,

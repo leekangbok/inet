@@ -15,7 +15,7 @@ code_t on_after_work(calllater_t *cl, void *data, int status)
 	char *senddata = icalloc(100);
 
 	sprintf(senddata, "%s\n", "hello telnet");
-	calllater_t *wcl = queue_write(senddata, strlen(senddata));
+	calllater_t *wcl = create_write_req(senddata, strlen(senddata));
 
 	callup_context(cl->qwork.ctx, EVENT_WRITE, wcl, sizeof(calllater_t));
 	return SUCCESS;
@@ -83,7 +83,7 @@ static code_t write_and_close(calllater_t *c, void *data, int status)
 static code_t read_stage3(channelhandlerctx_t *ctx,
 						  void *data, ssize_t datalen)
 {
-	calllater_t *cl = add_calllater(queue_write(data, datalen),
+	calllater_t *cl = add_calllater(create_write_req(data, datalen),
 									write_and_close, ctx, NULL);
 	prlog(LOGD, "%s", ctx->name);
 

@@ -101,7 +101,7 @@ void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
 	buf->len = suggested_size;
 }
 
-calllater_t *create_calllater(void)
+static calllater_t *create_calllater(void)
 {
 	calllater_t *cl = icalloc(sizeof(calllater_t));
 
@@ -133,28 +133,7 @@ void run_calllater(calllater_t *cl, int status)
 	}
 }
 
-void done_stream_write(uv_write_t *req, int status)
-{
-	calllater_t *cl = containerof(req, calllater_t, write.req.write);
-	channel_t *channel = cl->write.channel;
-
-	if (status) {
-		prlog(LOGC, "Write error %s.", uv_err_name(status));
-	}
-	else if (!uv_is_closing((uv_handle_t *)&channel->idle_timer_handle)) {
-		channel_idle_timer_reset(channel);
-	}
-	run_calllater(cl, status);
-
-	callup_channel(channel, EVENT_WRITECOMPLETE, (void *)(long)status, -1);
-
-	ifree(cl->write.data);
-	ifree(cl);
-
-	destroy_channel(channel);
-}
-
-calllater_t *queue_write(void *data, ssize_t datalen)
+calllater_t *create_write_req(void *data, ssize_t datalen)
 {
 	calllater_t *cl = create_calllater();
 
@@ -418,6 +397,7 @@ code_t callup_context(channelhandlerctx_t *ctx, int event,
 
 static void on_after_working(uv_work_t *req, int status)
 {
+	/* event loop thread */
 	queue_work_t *qwork = containerof(req, queue_work_t, work);
 	calllater_t *cl = containerof(qwork, calllater_t, qwork);
 
@@ -429,6 +409,7 @@ static void on_after_working(uv_work_t *req, int status)
 
 static void on_working(uv_work_t *req)
 {
+	/* thread from threads pool */
 	queue_work_t *qwork = containerof(req, queue_work_t, work);
 	calllater_t *cl = containerof(qwork, calllater_t, qwork);
 

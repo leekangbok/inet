@@ -146,7 +146,7 @@ channel	include/i_net.h	/^	channel_t *channel;$/;"	m	struct:__anon2
 channel	include/i_net.h	/^	channel_t *channel;$/;"	m	struct:channelpipeline_
 channel_	include/i_net.h	/^struct channel_ {$/;"	s
 channel_idle_timer_expire	src/i_net_tcp.c	/^static void channel_idle_timer_expire(uv_timer_t *handle)$/;"	f	file:
-channel_idle_timer_reset	src/i_net_tcp.c	/^static void channel_idle_timer_reset(channel_t *channel)$/;"	f	file:
+channel_idle_timer_reset	src/i_net_tcp.c	/^void channel_idle_timer_reset(channel_t *channel)$/;"	f
 channel_shutdown	src/i_net_tcp.c	/^void channel_shutdown(channel_t *channel, code_t icode)$/;"	f
 channel_t	include/i_net.h	/^typedef struct channel_ channel_t;$/;"	t	typeref:struct:channel_
 channelhandler_	include/i_net.h	/^struct channelhandler_ {$/;"	s

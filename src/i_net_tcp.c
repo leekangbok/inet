@@ -45,12 +45,14 @@ static void on_channel_shutdown(uv_shutdown_t *req, int status)
 
 void channel_shutdown(channel_t *channel, code_t icode)
 {
-	queue_work_t *qwork;
+	queue_work_t *qwork, *_qwork;
 
 	prlog(LOGD, "Channel shutdown(icode: %d).", icode);
 
-	ll_for_each_entry(qwork, &channel->queueworks, ll)
+	ll_for_each_entry_safe(qwork, _qwork, &channel->queueworks, ll) {
+		ll_del_init(&qwork->ll);
 		uv_cancel((uv_req_t *)&qwork->work);
+	}
 
 	channel->shutdown_handle.data = (void *)icode;
 	uv_shutdown(&channel->shutdown_handle, &channel->h.stream,
@@ -116,6 +118,27 @@ static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)
 
 	channel_shutdown(channel, PEERCLOSED);
 	ifree(buf->base);
+}
+
+void done_stream_write(uv_write_t *req, int status)
+{
+	calllater_t *cl = containerof(req, calllater_t, write.req.write);
+	channel_t *channel = cl->write.channel;
+
+	if (status) {
+		prlog(LOGC, "Write error %s.", uv_err_name(status));
+	}
+	else if (!uv_is_closing((uv_handle_t *)&channel->idle_timer_handle)) {
+		channel_idle_timer_reset(channel);
+	}
+	run_calllater(cl, status);
+
+	callup_channel(channel, EVENT_WRITECOMPLETE, (void *)(long)status, -1);
+
+	ifree(cl->write.data);
+	ifree(cl);
+
+	destroy_channel(channel);
 }
 
 int create_tcp_channel(uv_loop_t *uvloop, server_worker_t *me,
