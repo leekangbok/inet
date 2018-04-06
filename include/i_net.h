@@ -98,7 +98,8 @@ struct channelhandlerctx_ {
 	channelhandler_f operation;
 	channelhandler_t *handler;
 	char name[HANDLER_NAME_MAX + 32];
-#define mychannel handler->pipeline->channel
+#define mychannel myhandler->pipeline->channel
+#define myhandler handler
 };
 
 #define EVENT_ACTIVE		0
@@ -197,6 +198,7 @@ code_t callup_channel(channel_t *channel, int event,
 					  void *data, ssize_t datalen);
 code_t callup_context(channelhandlerctx_t *ctx, int event,
 					  void *data, ssize_t datalen);
+channelhandler_t *find_channelhandler(channel_t *channel, const char *name);
 code_t add_channelhandler(channel_t *channel, const char *name,
 						  channelhandler_f active,
 						  channelhandler_f idle,

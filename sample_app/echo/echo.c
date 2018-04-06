@@ -1,10 +1,15 @@
 #include <unistd.h>
 #include <string.h>
+#include <assert.h>
 
 #include <i_mem.h>
 
 #include <echo/echo.h>
 #include <i_print.h>
+
+typedef struct {
+	int hello_timeout;
+} echo_stage1_t;
 
 code_t on_after_work(calllater_t *cl, void *data, int status)
 {
@@ -29,9 +34,23 @@ code_t on_work(calllater_t *cl, void *data, int status)
 }
 
 static code_t idle_stage1(channelhandlerctx_t *ctx,
-							void *data, ssize_t datalen)
+						  void *data, ssize_t datalen)
 {
+	echo_stage1_t *echo_stage1 = ctx->myhandler->data;
+
 	prlog(LOGD, "%s(idle_timeout: %d)", ctx->name, (long)data);
+
+	echo_stage1->hello_timeout--;
+	if (echo_stage1->hello_timeout == 0) {
+		char *senddata = icalloc(100);
+
+		sprintf(senddata, "%s\n", "hello ping");
+		calllater_t *wcl = create_write_req(senddata, strlen(senddata));
+
+		callup_context(ctx, EVENT_WRITE, wcl, sizeof(calllater_t));
+		echo_stage1->hello_timeout = 5;
+	}
+
 	return callup(ctx, data, datalen);
 }
 
@@ -52,6 +71,11 @@ static code_t write_stage1(channelhandlerctx_t *ctx,
 static code_t active_stage2(channelhandlerctx_t *ctx,
 							void *data, ssize_t datalen)
 {
+	channelhandler_t *stage1_handler = find_channelhandler(ctx->mychannel, "echo_stage1");
+
+	assert(stage1_handler);
+	((echo_stage1_t *)(stage1_handler->data))->hello_timeout = 5;
+
 	queue_work(ctx, NULL, on_work, on_after_work);
 
 	prlog(LOGD, "%s", ctx->name);
@@ -111,6 +135,8 @@ static code_t write_done_stage3(channelhandlerctx_t *ctx,
 
 void setup_echo_channel(channel_t *channel)
 {
+	echo_stage1_t *echo_stage1 = icalloc(sizeof(*echo_stage1));
+
 	add_channelhandler(channel, "echo_stage1",
 					   NULL,
 					   idle_stage1,
@@ -120,7 +146,7 @@ void setup_echo_channel(channel_t *channel)
 					   write_done_stage1,
 					   NULL,
 					   NULL,
-					   NULL, NULL);
+					   echo_stage1, NULL);
 
 	add_channelhandler(channel, "echo_stage2",
 					   active_stage2,

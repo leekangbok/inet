@@ -224,8 +224,12 @@ code_t init_channelpipeline(channelpipeline_t *channelpipeline)
 code_t set_channel_data(channel_t *channel,
 						void *data, data_destroy_f data_destroy)
 {
-	if (channel->data)
-		channel->data_destroy(channel->data);
+	if (channel->data) {
+		if (channel->data_destroy)
+			channel->data_destroy(channel->data);
+		else
+			ifree(channel->data);
+	}
 
 	channel->data = data;
 	channel->data_destroy = data_destroy;
@@ -251,13 +255,19 @@ void destroy_channel(channel_t *channel)
 	for (i = 0; i < channel->pipeline.numofhandler; i++) {
 		channelhandler_t *handler = channel->pipeline.handler + i;
 		if (handler->data) {
-			handler->data_destroy(handler->data);
+			if (handler->data_destroy)
+				handler->data_destroy(handler->data);
+			else
+				ifree(handler->data);
 			handler->data = NULL;
 		}
 	}
 	ifree(channel->pipeline.handler);
 	if (channel->data) {
-		channel->data_destroy(channel->data);
+		if (channel->data_destroy)
+			channel->data_destroy(channel->data);
+		else
+			ifree(channel->data);
 		channel->data = NULL;
 	}
 	pthread_spin_lock(&channel->server->channels_spinlock);
@@ -295,6 +305,18 @@ static void locate_handler_context(channelhandler_t *handler,
 	curr->operation = operation ? operation : callup;
 	curr->next_ctx = next;
 	prev->next_ctx = curr;
+}
+
+channelhandler_t *find_channelhandler(channel_t *channel, const char *name)
+{
+	int i;
+
+	for (i = 0; i < channel->pipeline.numofhandler; i++) {
+		if (strstr((channel->pipeline.handler + i)->name, name)) {
+			return channel->pipeline.handler + i;
+		}
+	}
+	return NULL;
 }
 
 code_t add_channelhandler(channel_t *channel, const char *name,
