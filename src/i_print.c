@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdarg.h>
+#include <string.h>
+#include <time.h>
 
 #include <i_print.h>
 
@@ -10,6 +12,8 @@ void prlog(int level, const char *fmt, ...)
 {
 	char buf[8192];
 	va_list ap;
+	time_t ltime; /* calendar time */
+	struct tm local_tm;
 
 	if (level < loglevel)
 		return;
@@ -38,6 +42,13 @@ void prlog(int level, const char *fmt, ...)
 		prefix = "???";
 		break;
 	}
-	(void)fprintf(stderr, "[%zu][%s] %s\n", pthread_self(), prefix, buf);
+
+	ltime = time(NULL);
+	memset(&local_tm, 0, sizeof(local_tm));
+	struct tm *t = localtime_r(&ltime, &local_tm);
+	char time_fmt[64] = { 0 };
+	strftime(time_fmt, sizeof(time_fmt), "%Y-%m-%dT%H:%M:%S", t);
+	(void)fprintf(stderr, "[%zu][%s][%s] %s\n", pthread_self(), time_fmt,
+				  prefix, buf);
 	va_end(ap);
 }

@@ -137,24 +137,22 @@ void setup_echo_channel(channel_t *channel)
 {
 	echo_stage1_t *echo_stage1 = icalloc(sizeof(*echo_stage1));
 
-	channelhandlers_t handlers[] = {
-		{
-			.name = "es1",
+	channelhandlers_t handlers[] = {{
+		.name = "es1",
 			.idle = idle_stage1,
 			.read = read_stage1,
 			.write = write_stage1,
 			.write_complete = write_done_stage1,
 			.data = echo_stage1,
-		}, {
-			.name = "es2",
+	}, {
+		.name = "es2",
 			.active = active_stage2,
-		}, {
-			.name = "es3",
+	}, {
+		.name = "es3",
 			.read = read_stage3,
 			.write = write_stage3,
 			.write_complete = write_done_stage3,
-		}
-	};
+	}};
 
 	add_channelhandlers(channel, handlers, I_COUNT_OF(handlers));
 }
