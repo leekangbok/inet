@@ -3,7 +3,7 @@
 #include <assert.h>
 
 #include <i_mem.h>
-
+#include <i_macro.h>
 #include <echo/echo.h>
 #include <i_print.h>
 
@@ -71,7 +71,7 @@ static code_t write_stage1(channelhandlerctx_t *ctx,
 static code_t active_stage2(channelhandlerctx_t *ctx,
 							void *data, ssize_t datalen)
 {
-	channelhandler_t *stage1_handler = find_channelhandler(ctx->mychannel, "echo_stage1");
+	channelhandler_t *stage1_handler = find_channelhandler(ctx->mychannel, "es1");
 
 	assert(stage1_handler);
 	((echo_stage1_t *)(stage1_handler->data))->hello_timeout = 5;
@@ -137,36 +137,24 @@ void setup_echo_channel(channel_t *channel)
 {
 	echo_stage1_t *echo_stage1 = icalloc(sizeof(*echo_stage1));
 
-	add_channelhandler(channel, "echo_stage1",
-					   NULL,
-					   idle_stage1,
-					   read_stage1,
-					   NULL,
-					   write_stage1,
-					   write_done_stage1,
-					   NULL,
-					   NULL,
-					   echo_stage1, NULL);
+	channelhandlers_t handlers[] = {
+		{
+			.name = "es1",
+			.idle = idle_stage1,
+			.read = read_stage1,
+			.write = write_stage1,
+			.write_complete = write_done_stage1,
+			.data = echo_stage1,
+		}, {
+			.name = "es2",
+			.active = active_stage2,
+		}, {
+			.name = "es3",
+			.read = read_stage3,
+			.write = write_stage3,
+			.write_complete = write_done_stage3,
+		}
+	};
 
-	add_channelhandler(channel, "echo_stage2",
-					   active_stage2,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL,
-					   NULL, NULL);
-
-	add_channelhandler(channel, "echo_stage3",
-					   NULL,
-					   NULL,
-					   read_stage3,
-					   NULL,
-					   write_stage3,
-					   write_done_stage3,
-					   NULL,
-					   NULL,
-					   NULL, NULL);
+	add_channelhandlers(channel, handlers, I_COUNT_OF(handlers));
 }

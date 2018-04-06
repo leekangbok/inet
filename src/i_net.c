@@ -207,9 +207,11 @@ static void set_def_outbound_handler(channelhandler_t *channelhandler)
 	channelhandler->ctx[EVENT_WRITECOMPLETE].operation = def_outbound_handler;
 }
 
-code_t init_channelpipeline(channelpipeline_t *channelpipeline)
+static code_t init_channelpipeline(channelpipeline_t *channelpipeline,
+								   size_t numofhandlers)
 {
-	channelpipeline->handler = icalloc(10 * sizeof(channelhandler_t));
+	channelpipeline->handler = icalloc((numofhandlers + 2) * \
+									   sizeof(channelhandler_t));
 	channelpipeline->numofhandler = 2;
 
 	set_def_inbound_handler(&channelpipeline->handler[1]);
@@ -283,7 +285,6 @@ channel_t *create_channel(void *data, data_destroy_f data_destroy)
 	INIT_LL_HEAD(&channel->queueworks);
 
 	channel->pipeline.channel = channel;
-	init_channelpipeline(&channel->pipeline);
 
 	set_channel_data(channel, data, data_destroy);
 
@@ -319,81 +320,77 @@ channelhandler_t *find_channelhandler(channel_t *channel, const char *name)
 	return NULL;
 }
 
-code_t add_channelhandler(channel_t *channel, const char *name,
-						  channelhandler_f active,
-						  channelhandler_f idle,
-						  channelhandler_f read,
-						  channelhandler_f read_complete,
-						  channelhandler_f write,
-						  channelhandler_f write_complete,
-						  channelhandler_f error,
-						  channelhandler_f error_complete,
-						  void *data, data_destroy_f data_destroy)
+code_t add_channelhandlers(channel_t *channel, channelhandlers_t handlers[],
+						   size_t numofhandlers)
 {
 	channelpipeline_t *channelpipeline = &channel->pipeline;
 	channelhandler_t *curr, *prev, *next;
+	size_t i;
 
-	next = channelpipeline->handler + channelpipeline->numofhandler;
-	curr = next - 1;
-	prev = curr - 1;
+	init_channelpipeline(channelpipeline, numofhandlers);
 
-	memcpy(next, curr, sizeof(channelhandler_t));
+	for (i = 0; i < numofhandlers; i++) {
+		next = channelpipeline->handler + channelpipeline->numofhandler;
+		curr = next - 1;
+		prev = curr - 1;
 
-	snprintf(curr->name, HANDLER_NAME_MAX - 1, "%s", name);
-	curr->data = data;
-	curr->data_destroy = data_destroy;
-	curr->pipeline = channelpipeline;
+		memcpy(next, curr, sizeof(channelhandler_t));
 
-	sprintf(curr->ctx[EVENT_ACTIVE].name, "%s::ACTIVE", curr->name);
-	locate_handler_context(curr,
-						   &curr->ctx[EVENT_ACTIVE],
-						   &prev->ctx[EVENT_ACTIVE],
-						   &next->ctx[EVENT_ACTIVE],
-						   active);
-	sprintf(curr->ctx[EVENT_IDLE].name, "%s::IDLE", curr->name);
-	locate_handler_context(curr,
-						   &curr->ctx[EVENT_IDLE],
-						   &prev->ctx[EVENT_IDLE],
-						   &next->ctx[EVENT_IDLE],
-						   idle);
-	sprintf(curr->ctx[EVENT_READ].name, "%s::READ", curr->name);
-	locate_handler_context(curr,
-						   &curr->ctx[EVENT_READ],
-						   &prev->ctx[EVENT_READ],
-						   &next->ctx[EVENT_READ],
-						   read);
-	sprintf(curr->ctx[EVENT_READCOMPLETE].name, "%s::READCOMPLETE", curr->name);
-	locate_handler_context(curr,
-						   &curr->ctx[EVENT_READCOMPLETE],
-						   &prev->ctx[EVENT_READCOMPLETE],
-						   &next->ctx[EVENT_READCOMPLETE],
-						   read_complete);
-	sprintf(curr->ctx[EVENT_WRITE].name, "%s::WRITE", curr->name);
-	locate_handler_context(curr,
-						   &curr->ctx[EVENT_WRITE],
-						   &next->ctx[EVENT_WRITE],
-						   &prev->ctx[EVENT_WRITE],
-						   write);
-	sprintf(curr->ctx[EVENT_WRITECOMPLETE].name, "%s::WRITECOMPLETE", curr->name);
-	locate_handler_context(curr,
-						   &curr->ctx[EVENT_WRITECOMPLETE],
-						   &next->ctx[EVENT_WRITECOMPLETE],
-						   &prev->ctx[EVENT_WRITECOMPLETE],
-						   write_complete);
-	sprintf(curr->ctx[EVENT_ERROR].name, "%s::ERROR", curr->name);
-	locate_handler_context(curr,
-						   &curr->ctx[EVENT_ERROR],
-						   &prev->ctx[EVENT_ERROR],
-						   &next->ctx[EVENT_ERROR],
-						   error);
-	sprintf(curr->ctx[EVENT_ERRORCOMPLETE].name, "%s::ERRORCOMPLETE", curr->name);
-	locate_handler_context(curr,
-						   &curr->ctx[EVENT_ERRORCOMPLETE],
-						   &prev->ctx[EVENT_ERRORCOMPLETE],
-						   &next->ctx[EVENT_ERRORCOMPLETE],
-						   error_complete);
-	channelpipeline->numofhandler += 1;
+		snprintf(curr->name, HANDLER_NAME_MAX, "%s", handlers[i].name);
+		curr->data = handlers[i].data;
+		curr->data_destroy = handlers[i].data_destroy;
+		curr->pipeline = channelpipeline;
 
+		sprintf(curr->ctx[EVENT_ACTIVE].name, "%s>A", curr->name);
+		locate_handler_context(curr,
+							   &curr->ctx[EVENT_ACTIVE],
+							   &prev->ctx[EVENT_ACTIVE],
+							   &next->ctx[EVENT_ACTIVE],
+							   handlers[i].active);
+		sprintf(curr->ctx[EVENT_IDLE].name, "%s>I", curr->name);
+		locate_handler_context(curr,
+							   &curr->ctx[EVENT_IDLE],
+							   &prev->ctx[EVENT_IDLE],
+							   &next->ctx[EVENT_IDLE],
+							   handlers[i].idle);
+		sprintf(curr->ctx[EVENT_READ].name, "%s>R", curr->name);
+		locate_handler_context(curr,
+							   &curr->ctx[EVENT_READ],
+							   &prev->ctx[EVENT_READ],
+							   &next->ctx[EVENT_READ],
+							   handlers[i].read);
+		sprintf(curr->ctx[EVENT_READCOMPLETE].name, "%s>RC", curr->name);
+		locate_handler_context(curr,
+							   &curr->ctx[EVENT_READCOMPLETE],
+							   &prev->ctx[EVENT_READCOMPLETE],
+							   &next->ctx[EVENT_READCOMPLETE],
+							   handlers[i].read_complete);
+		sprintf(curr->ctx[EVENT_WRITE].name, "%s>W", curr->name);
+		locate_handler_context(curr,
+							   &curr->ctx[EVENT_WRITE],
+							   &next->ctx[EVENT_WRITE],
+							   &prev->ctx[EVENT_WRITE],
+							   handlers[i].write);
+		sprintf(curr->ctx[EVENT_WRITECOMPLETE].name, "%s>WC", curr->name);
+		locate_handler_context(curr,
+							   &curr->ctx[EVENT_WRITECOMPLETE],
+							   &next->ctx[EVENT_WRITECOMPLETE],
+							   &prev->ctx[EVENT_WRITECOMPLETE],
+							   handlers[i].write_complete);
+		sprintf(curr->ctx[EVENT_ERROR].name, "%s>E", curr->name);
+		locate_handler_context(curr,
+							   &curr->ctx[EVENT_ERROR],
+							   &prev->ctx[EVENT_ERROR],
+							   &next->ctx[EVENT_ERROR],
+							   handlers[i].error);
+		sprintf(curr->ctx[EVENT_ERRORCOMPLETE].name, "%s>EC", curr->name);
+		locate_handler_context(curr,
+							   &curr->ctx[EVENT_ERRORCOMPLETE],
+							   &prev->ctx[EVENT_ERRORCOMPLETE],
+							   &next->ctx[EVENT_ERRORCOMPLETE],
+							   handlers[i].error_complete);
+		channelpipeline->numofhandler += 1;
+	}
 	return SUCCESS;
 }
 

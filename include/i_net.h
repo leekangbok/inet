@@ -69,6 +69,20 @@ struct calllater_ {
 	};
 };
 
+typedef struct {
+	const char *name;
+	channelhandler_f active;
+	channelhandler_f idle;
+	channelhandler_f read;
+	channelhandler_f read_complete;
+	channelhandler_f write;
+	channelhandler_f write_complete;
+	channelhandler_f error;
+	channelhandler_f error_complete;
+	void *data;
+	data_destroy_f data_destroy;
+} channelhandlers_t;
+
 #define ACMD_NEW_TCP_CONN 1
 
 typedef struct {
@@ -91,13 +105,13 @@ struct server_worker_ {
 	uv_thread_t thread_id;
 };
 
-#define HANDLER_NAME_MAX 32
+#define HANDLER_NAME_MAX 4
 
 struct channelhandlerctx_ {
 	channelhandlerctx_t *next_ctx;
 	channelhandler_f operation;
 	channelhandler_t *handler;
-	char name[HANDLER_NAME_MAX + 32];
+	char name[HANDLER_NAME_MAX + 4];
 #define mychannel myhandler->pipeline->channel
 #define myhandler handler
 };
@@ -199,16 +213,8 @@ code_t callup_channel(channel_t *channel, int event,
 code_t callup_context(channelhandlerctx_t *ctx, int event,
 					  void *data, ssize_t datalen);
 channelhandler_t *find_channelhandler(channel_t *channel, const char *name);
-code_t add_channelhandler(channel_t *channel, const char *name,
-						  channelhandler_f active,
-						  channelhandler_f idle,
-						  channelhandler_f read,
-						  channelhandler_f read_complete,
-						  channelhandler_f write,
-						  channelhandler_f write_complete,
-						  channelhandler_f error,
-						  channelhandler_f error_complete,
-						  void *data, data_destroy_f data_destroy);
+code_t add_channelhandlers(channel_t *channel, channelhandlers_t handlers[],
+						   size_t numofhandlers);
 channel_t *create_channel(void *data, data_destroy_f data_destroy);
 void destroy_channel(channel_t *channel);
 code_t add_server(server_config_t *config);
