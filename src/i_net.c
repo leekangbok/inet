@@ -40,9 +40,8 @@ static void signal_cb(uv_signal_t *handle, int signum)
 		prlog(LOGD, "SIGPIPE received.");
 		break;
 	default:
-		ll_for_each_entry(signal_handle, head, ll) {
+		ll_for_each_entry(signal_handle, head, ll)
 			signal_handle->signal_cb(signal_handle->server, signum);
-		}
 		break;
 	}
 }
@@ -149,9 +148,8 @@ static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,
 	calllater_t *cl = (calllater_t *)data;
 	int status = UV_ENOTCONN;
 
-	if (cl == NULL || datalen <= 0) {
+	if (cl == NULL || datalen <= 0)
 		return SUCCESS;
-	}
 
 	ctx->mychannel->refcnt++;
 	cl->write.channel = ctx->mychannel;

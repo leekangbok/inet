@@ -34,13 +34,11 @@ static void on_channel_shutdown(uv_shutdown_t *req, int status)
 	uv_read_stop(&channel->h.stream);
 	uv_timer_stop(&channel->idle_timer_handle);
 
-	if (!uv_is_closing(&channel->h.handle)) {
+	if (!uv_is_closing(&channel->h.handle))
 		uv_close(&channel->h.handle, on_channel_close);
-	}
-	if (!uv_is_closing((uv_handle_t *)&channel->idle_timer_handle)) {
+	if (!uv_is_closing((uv_handle_t *)&channel->idle_timer_handle))
 		uv_close((uv_handle_t *)&channel->idle_timer_handle,
 				 on_channel_idle_timer_close);
-	}
 }
 
 void channel_shutdown(channel_t *channel, code_t icode)
@@ -125,12 +123,11 @@ void done_stream_write(uv_write_t *req, int status)
 	calllater_t *cl = containerof(req, calllater_t, write.req.write);
 	channel_t *channel = cl->write.channel;
 
-	if (status) {
+	if (status)
 		prlog(LOGC, "Write error %s.", uv_err_name(status));
-	}
-	else {
+	else
 		channel_idle_timer_reset(channel);
-	}
+
 	run_calllater(cl, status);
 
 	callup_channel(channel, EVENT_WRITECOMPLETE, (void *)(long)status, -1);
