@@ -12,14 +12,14 @@ static void on_channel_close(uv_handle_t *handle)
 {
 	channel_t *channel = containerof(handle, channel_t, h);
 
-	destroy_channel(channel);
+	release_channel(channel);
 }
 
 static void on_channel_idle_timer_close(uv_handle_t *handle)
 {
 	channel_t *channel = containerof(handle, channel_t, idle_timer_handle);
 
-	destroy_channel(channel);
+	release_channel(channel);
 }
 
 static void on_channel_shutdown(uv_shutdown_t *req, int status)
@@ -62,8 +62,10 @@ static void channel_idle_timer_expire(uv_timer_t *handle)
 	channel_t *channel = containerof(handle, channel_t, idle_timer_handle);
 
 	--channel->idle_timeout;
-	if (channel->server->config.idle_timeout && (channel->idle_timeout == 0))
+	if (channel->server->config.idle_timeout && (channel->idle_timeout == 0)) {
+		callup_channel(channel, EVENT_ERROR, (void *)(long)TIMEOUT, -1);
 		channel_shutdown(channel, TIMEOUT);
+	}
 	else
 		callup_channel(channel, EVENT_IDLE,
 					   (void *)(long)(channel->idle_timeout), 0);
@@ -135,7 +137,7 @@ void done_stream_write(uv_write_t *req, int status)
 	ifree(cl->write.data);
 	ifree(cl);
 
-	destroy_channel(channel);
+	release_channel(channel);
 }
 
 int create_tcp_channel(uv_loop_t *uvloop, server_worker_t *me,
@@ -149,7 +151,8 @@ int create_tcp_channel(uv_loop_t *uvloop, server_worker_t *me,
 	channel->server = server;
 	channel->uvloop = uvloop;
 
-	channel->refcnt = 2;
+	hold_channel(channel);
+	hold_channel(channel);
 
 	server->config.setup_channel(channel);
 

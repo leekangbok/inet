@@ -4,7 +4,7 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
-ACMD_NEW_TCP_CONN	include/i_net.h	86;"	d
+ACMD_NEW_TCP_CONN	include/i_net.h	94;"	d
 ALIGNMENT0	src/i_mem.c	7;"	d	file:
 CC	Makefile	/^CC                    = $(CXX)$/;"	m
 CFLAGS	Makefile	/^CFLAGS  = -O3$/;"	m
@@ -20,15 +20,15 @@ DEPS	Makefile	/^DEPS    = $(foreach f, $(OBJS), $(addprefix $(dir $(f))., $(pats
 DEP_OPT	Makefile	/^DEP_OPT = $(shell if `$(CC) --version | grep -i "GCC" >\/dev\/null`; then \\$/;"	m
 ETAGS	Makefile	/^ETAGS = etags$/;"	m
 ETAGSFLAGS	Makefile	/^ETAGSFLAGS =$/;"	m
-EVENT_ACTIVE	include/i_net.h	119;"	d
-EVENT_ERROR	include/i_net.h	124;"	d
-EVENT_ERRORCOMPLETE	include/i_net.h	125;"	d
-EVENT_IDLE	include/i_net.h	126;"	d
-EVENT_MAX	include/i_net.h	127;"	d
-EVENT_READ	include/i_net.h	120;"	d
-EVENT_READCOMPLETE	include/i_net.h	121;"	d
-EVENT_WRITE	include/i_net.h	122;"	d
-EVENT_WRITECOMPLETE	include/i_net.h	123;"	d
+EVENT_ACTIVE	include/i_net.h	127;"	d
+EVENT_ERROR	include/i_net.h	132;"	d
+EVENT_ERRORCOMPLETE	include/i_net.h	133;"	d
+EVENT_IDLE	include/i_net.h	134;"	d
+EVENT_MAX	include/i_net.h	135;"	d
+EVENT_READ	include/i_net.h	128;"	d
+EVENT_READCOMPLETE	include/i_net.h	129;"	d
+EVENT_WRITE	include/i_net.h	130;"	d
+EVENT_WRITECOMPLETE	include/i_net.h	131;"	d
 EXTRA_CFLAGS	Makefile	/^EXTRA_CFLAGS           =$/;"	m
 EXTRA_CFLAGS_LINUX	Makefile	/^EXTRA_CFLAGS_LINUX     =$/;"	m
 EXTRA_CFLAGS_MACOS	Makefile	/^EXTRA_CFLAGS_MACOS     =$/;"	m
@@ -38,7 +38,7 @@ EXTRA_LDFLAGS_LINUX	Makefile	/^EXTRA_LDFLAGS_LINUX    = -Wl,--gc-sections -Wl,--
 EXTRA_LDFLAGS_MACOS	Makefile	/^EXTRA_LDFLAGS_MACOS    = -Wl,-search_paths_first -Wl,-dead_strip -v   # deleting unused code for Pear, for minimal exe size$/;"	m
 EXTRA_LDFLAGS_WINDOWS	Makefile	/^EXTRA_LDFLAGS_WINDOWS  =$/;"	m
 FAIL	include/i_net.h	/^	FAIL,$/;"	e	enum:code_
-HANDLER_NAME_MAX	include/i_net.h	108;"	d
+HANDLER_NAME_MAX	include/i_net.h	116;"	d
 HDREXTS	Makefile	/^HDREXTS = .h .H .hh .hpp .HPP .h++ .hxx .hp$/;"	m
 HEADERS	Makefile	/^HEADERS = $(foreach d,$(SRCDIRS),$(wildcard $(addprefix $(d)\/*,$(HDREXTS))))$/;"	m
 HLL_HEAD	include/llist.h	368;"	d
@@ -79,15 +79,15 @@ LOGC	include/i_print.h	7;"	d
 LOGD	include/i_print.h	4;"	d
 LOGI	include/i_print.h	5;"	d
 LOGW	include/i_print.h	6;"	d
-MAXSIGNUM	include/i_net.h	170;"	d
+MAXSIGNUM	include/i_net.h	178;"	d
 NUM_WORKERS	src/i_net.c	27;"	d	file:
 OBJS	Makefile	/^OBJS    = $(addsuffix .o, $(basename $(SOURCES)))$/;"	m
 OUTPTR0	src/i_mem.c	8;"	d	file:
 PEERCLOSED	include/i_net.h	/^	PEERCLOSED,$/;"	e	enum:code_
 PROGRAM	Makefile	/^PROGRAM                = app # libilib.so$/;"	m
 RM	Makefile	/^RM     = rm -f$/;"	m
-SERVERTYPE_TCP	include/i_net.h	192;"	d
-SERVERTYPE_UDP	include/i_net.h	193;"	d
+SERVERTYPE_TCP	include/i_net.h	200;"	d
+SERVERTYPE_UDP	include/i_net.h	201;"	d
 SOURCES	Makefile	/^SOURCES = $(foreach d,$(SRCDIRS),$(wildcard $(addprefix $(d)\/*,$(SRCEXTS))))$/;"	m
 SRCDIRS	Makefile	/^	SRCDIRS := $(shell find $(SRCDIRS) -type d)$/;"	m
 SRCDIRS	Makefile	/^SRCDIRS               :=$/;"	m
@@ -134,6 +134,9 @@ async_cmd_t	include/i_net.h	/^} async_cmd_t;$/;"	t	typeref:struct:__anon7
 bindaddr	include/i_net.h	/^	const char *bindaddr;$/;"	m	struct:server_config_
 bindport	include/i_net.h	/^	int bindport;$/;"	m	struct:server_config_
 buf	include/i_net.h	/^	uv_buf_t buf;$/;"	m	struct:__anon3
+buf_	include/i_net.h	/^struct buf_ {$/;"	s
+buf_t	include/i_net.h	/^typedef struct buf_ buf_t;$/;"	t	typeref:struct:buf_
+buflen	include/i_net.h	/^	ssize_t buflen;$/;"	m	struct:buf_
 call_later	include/i_net.h	/^typedef code_t (*call_later)(calllater_t *cl, void *data, int status);$/;"	t
 call_next	src/i_net.c	/^unsigned long call_next = 0;$/;"	v
 callback_	include/i_net.h	/^struct callback_ {$/;"	s
@@ -179,6 +182,7 @@ ctx	include/i_net.h	/^	channelhandlerctx_t ctx[EVENT_MAX];$/;"	m	struct:channelh
 data	include/i_net.h	/^	void *data;$/;"	m	struct:__anon2
 data	include/i_net.h	/^	void *data;$/;"	m	struct:__anon3
 data	include/i_net.h	/^	void *data;$/;"	m	struct:__anon6
+data	include/i_net.h	/^	void *data;$/;"	m	struct:buf_
 data	include/i_net.h	/^	void *data;$/;"	m	struct:callback_
 data	include/i_net.h	/^	void *data;$/;"	m	struct:channel_
 data	include/i_net.h	/^	void *data;$/;"	m	struct:channelhandler_
@@ -189,10 +193,10 @@ data_destroy	include/i_net.h	/^	data_destroy_f data_destroy;$/;"	m	struct:channe
 data_destroy	include/i_net.h	/^	data_destroy_f data_destroy;$/;"	m	struct:channelhandler_
 data_destroy_f	include/i_net.h	/^typedef void (*data_destroy_f)(void *data);$/;"	t
 datalen	include/i_net.h	/^	ssize_t datalen;$/;"	m	struct:__anon3
+datalen	include/i_net.h	/^	ssize_t datalen;$/;"	m	struct:buf_
 dbl	src/i_mem.c	/^	double dbl;$/;"	m	union:alignment0	file:
 def_inbound_handler	src/i_net.c	/^static code_t def_inbound_handler(channelhandlerctx_t *ctx, void *data,$/;"	f	file:
 def_outbound_handler	src/i_net.c	/^static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,$/;"	f	file:
-destroy_channel	src/i_net.c	/^void destroy_channel(channel_t *channel)$/;"	f
 done_stream_write	src/i_net_tcp.c	/^void done_stream_write(uv_write_t *req, int status)$/;"	f
 echo_stage1_t	sample_app/echo/echo.c	/^} echo_stage1_t;$/;"	t	typeref:struct:__anon1	file:
 error	include/i_net.h	/^	channelhandler_f error;$/;"	m	struct:__anon6
@@ -225,6 +229,7 @@ hll_for_each_safe	include/llist.h	448;"	d
 hll_head	include/llist.h	/^struct hll_head {$/;"	s
 hll_node	include/llist.h	/^struct hll_node {$/;"	s
 hll_unhashed	include/llist.h	/^static inline int hll_unhashed(const struct hll_node *h)$/;"	f
+hold_channel	src/i_net.c	/^channel_t *hold_channel(channel_t *channel)$/;"	f
 iallocator_init	include/i_mem.h	6;"	d
 iamount_of	src/i_mem.c	/^size_t iamount_of(void)$/;"	f
 icalloc	include/i_mem.h	8;"	d
@@ -273,8 +278,8 @@ ll_splice_init	include/llist.h	/^static inline void ll_splice_init(struct ll_hea
 locate_handler_context	src/i_net.c	/^static void locate_handler_context(channelhandler_t *handler,$/;"	f	file:
 loglevel	src/i_print.c	/^int loglevel = LOGD;$/;"	v
 main	main.c	/^int main(int argc, char *argv[])$/;"	f
-mychannel	include/i_net.h	115;"	d
-myhandler	include/i_net.h	116;"	d
+mychannel	include/i_net.h	123;"	d
+myhandler	include/i_net.h	124;"	d
 name	include/i_net.h	/^	char name[HANDLER_NAME_MAX + 4];$/;"	m	struct:channelhandlerctx_
 name	include/i_net.h	/^	char name[HANDLER_NAME_MAX];$/;"	m	struct:channelhandler_
 name	include/i_net.h	/^	const char *name;$/;"	m	struct:__anon6
@@ -314,7 +319,9 @@ read_complete	include/i_net.h	/^	channelhandler_f read_complete;$/;"	m	struct:__
 read_stage1	sample_app/echo/echo.c	/^static code_t read_stage1(channelhandlerctx_t *ctx,$/;"	f	file:
 read_stage2	sample_app/echo/echo.c	/^static code_t read_stage2(channelhandlerctx_t *ctx,$/;"	f	file:
 read_stage3	sample_app/echo/echo.c	/^static code_t read_stage3(channelhandlerctx_t *ctx,$/;"	f	file:
-refcnt	include/i_net.h	/^	int refcnt;$/;"	m	struct:channel_
+refs	include/i_net.h	/^	int refs;$/;"	m	struct:buf_
+refs	include/i_net.h	/^	int refs;$/;"	m	struct:channel_
+release_channel	src/i_net.c	/^void release_channel(channel_t *channel)$/;"	f
 req	include/i_net.h	/^		uv_req_t req;$/;"	m	union:__anon3::__anon4
 req	include/i_net.h	/^	} req;$/;"	m	struct:__anon3	typeref:union:__anon3::__anon4
 run_calllater	src/i_net.c	/^void run_calllater(calllater_t *cl, int status)$/;"	f

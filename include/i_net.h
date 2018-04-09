@@ -26,11 +26,19 @@ typedef struct server_config_ server_config_t;
 typedef struct server_worker_ server_worker_t;
 typedef struct callback_ callback_t;
 typedef struct calllater_ calllater_t;
+typedef struct buf_ buf_t;
 
 typedef code_t (*channelhandler_f)(channelhandlerctx_t *ctx, void *data,
 								   ssize_t datalen);
 typedef code_t (*call_later)(calllater_t *cl, void *data, int status);
 typedef void (*data_destroy_f)(void *data);
+
+struct buf_ {
+	void *data;
+	ssize_t datalen;
+	ssize_t buflen;
+	int refs;
+};
 
 typedef struct {
 	struct ll_head ll;
@@ -150,7 +158,7 @@ struct channel_ {
 		uv_udp_t udp;
 	} h;
 	struct ll_head queueworks;
-	int refcnt;
+	int refs;
 	int idle_timeout;
 	uv_timer_t idle_timer_handle;
 	uv_shutdown_t shutdown_handle;
@@ -216,7 +224,8 @@ channelhandler_t *find_channelhandler(channel_t *channel, const char *name);
 code_t add_channelhandlers(channel_t *channel, channelhandlers_t handlers[],
 						   size_t numofhandlers);
 channel_t *create_channel(void *data, data_destroy_f data_destroy);
-void destroy_channel(channel_t *channel);
+channel_t *hold_channel(channel_t *channel);
+void release_channel(channel_t *channel);
 code_t add_server(server_config_t *config);
 code_t start_server(void);
 

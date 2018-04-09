@@ -151,7 +151,7 @@ static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,
 	if (cl == NULL || datalen <= 0)
 		return SUCCESS;
 
-	ctx->mychannel->refcnt++;
+	hold_channel(ctx->mychannel);
 	cl->write.channel = ctx->mychannel;
 	cl->write.buf = uv_buf_init(cl->write.data, cl->write.datalen);
 
@@ -237,17 +237,23 @@ code_t set_channel_data(channel_t *channel,
 	return SUCCESS;
 }
 
-void destroy_channel(channel_t *channel)
+channel_t *hold_channel(channel_t *channel)
+{
+	channel->refs++;
+	return channel;
+}
+
+void release_channel(channel_t *channel)
 {
 	int i;
 
-	channel->refcnt--;
+	channel->refs--;
 
-	assert(channel->refcnt >= 0);
+	assert(channel->refs >= 0);
 
-	prlog(LOGD, "Channel(%p) - refcnt: %d", channel, channel->refcnt);
+	prlog(LOGD, "Channel(%p) - refs: %d", channel, channel->refs);
 
-	if (channel->refcnt > 0)
+	if (channel->refs > 0)
 		return;
 
 	prlog(LOGD, "Channel destroy.");
@@ -428,9 +434,10 @@ static void on_after_working(uv_work_t *req, int status)
 	queue_work_t *qwork = containerof(req, queue_work_t, work);
 	calllater_t *cl = containerof(qwork, calllater_t, qwork);
 
-	qwork->after_work(cl, qwork->data, status);
+	if (qwork->after_work)
+		qwork->after_work(cl, qwork->data, status);
 	ll_del(&qwork->ll);
-	destroy_channel(qwork->ctx->mychannel);
+	release_channel(qwork->ctx->mychannel);
 	ifree(cl);
 }
 
@@ -452,7 +459,7 @@ void queue_work(channelhandlerctx_t *ctx, void *data, call_later on_work,
 	cl->qwork.on_work = on_work; cl->qwork.after_work = after_work;
 
 	ll_add_tail(&cl->qwork.ll, &ctx->mychannel->queueworks);
-	ctx->mychannel->refcnt++;
+	hold_channel(ctx->mychannel);
 	uv_queue_work(ctx->mychannel->uvloop, &cl->qwork.work,
 				  on_working, on_after_working);
 }

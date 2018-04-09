@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 	config.servertype = "tcp_ip4";
 	config.bindaddr = "127.0.0.1";
 	config.bindport = 10000;
-	config.idle_timeout = 10;
+	config.idle_timeout = 2;
 	config.setup_channel = setup_echo_channel;
 	add_server(&config);
 
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	config.servertype = "tcp_ip4";
 	config.bindaddr = "127.0.0.1";
 	config.bindport = 10001;
-	config.idle_timeout = 10;
+	config.idle_timeout = 2;
 	config.setup_channel = setup_echo_channel;
 	add_server(&config);
 
