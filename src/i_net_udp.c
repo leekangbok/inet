@@ -49,10 +49,6 @@ static void on_data(uv_udp_t *handle, ssize_t datalen, const uv_buf_t *buf,
 
 	server->config.setup_channel(channel);
 
-	pthread_spin_lock(&server->channels_spinlock);
-	ll_add_tail(&channel->ll, &server->channels);
-	pthread_spin_unlock(&server->channels_spinlock);
-
 	prlog(LOGD, "New Data received(%zubytes) on Server(%s)",
 		  datalen, server->config.name);
 

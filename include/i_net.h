@@ -213,6 +213,7 @@ struct server_ {
 	server_config_t config;
 	int (*setup_server)(server_t *server, uv_loop_t *uvloop);
 	uv_loop_t *uvloop;
+	pthread_spinlock_t data_spinlock;
 	void *data;
 	data_destroy_f data_destroy;
 };

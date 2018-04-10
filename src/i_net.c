@@ -290,9 +290,12 @@ void release_channel(channel_t *channel)
 			ifree(channel->data);
 		channel->data = NULL;
 	}
-	pthread_spin_lock(&channel->server->channels_spinlock);
-	ll_del(&channel->ll);
-	pthread_spin_unlock(&channel->server->channels_spinlock);
+
+	if (!ll_empty(&channel->ll)) {
+		pthread_spin_lock(&channel->server->channels_spinlock);
+		ll_del(&channel->ll);
+		pthread_spin_unlock(&channel->server->channels_spinlock);
+	}
 	ifree(channel);
 }
 
@@ -311,6 +314,7 @@ channel_t *create_channel(void *data, data_destroy_f data_destroy)
 	channel_t *channel = icalloc(sizeof(channel_t));
 
 	INIT_LL_HEAD(&channel->queueworks);
+	INIT_LL_HEAD(&channel->ll);
 
 	channel->pipeline.channel = channel;
 
@@ -498,6 +502,7 @@ code_t add_server(server_config_t *config)
 			server_t *server = icalloc(sizeof(server_t));
 
 			pthread_spin_init(&server->channels_spinlock, PTHREAD_PROCESS_PRIVATE);
+			pthread_spin_init(&server->data_spinlock, PTHREAD_PROCESS_PRIVATE);
 			INIT_LL_HEAD(&server->channels);
 
 			memcpy(&server->config, config, sizeof(server_config_t));
