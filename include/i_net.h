@@ -92,6 +92,7 @@ typedef struct {
 } channelhandlers_t;
 
 #define ACMD_NEW_TCP_CONN 1
+#define ACMD_NEW_DATAGRAM 2
 
 typedef struct {
 	struct ll_head ll;
@@ -102,6 +103,13 @@ typedef struct {
 			uv_tcp_t tcp;
 			int fd;
 		} new_connection;
+		struct {
+			server_t *server;
+			uv_udp_t *handle;
+			struct sockaddr addr;
+			uv_buf_t buf;
+			ssize_t datalen;
+		} new_datagram;
 	};
 } async_cmd_t;
 
@@ -120,8 +128,9 @@ struct channelhandlerctx_ {
 	channelhandler_f operation;
 	channelhandler_t *handler;
 	char name[HANDLER_NAME_MAX + 4];
-#define mychannel myhandler->pipeline->channel
 #define myhandler handler
+#define mychannel myhandler->pipeline->channel
+#define myserver mychannel->server
 };
 
 #define EVENT_ACTIVE		0
@@ -155,13 +164,15 @@ struct channel_ {
 		uv_handle_t handle;
 		uv_stream_t stream;
 		uv_tcp_t tcp;
-		uv_udp_t udp;
 	} h;
 	struct ll_head queueworks;
 	int refs;
 	int idle_timeout;
 	uv_timer_t idle_timer_handle;
-	uv_shutdown_t shutdown_handle;
+	union {
+		uv_shutdown_t shutdown_handle;
+		struct sockaddr conn;
+	};
 	void *data;
 	data_destroy_f data_destroy;
 	uv_loop_t *uvloop;
@@ -178,7 +189,6 @@ struct server_config_ {
 #define MAXSIGNUM 64
 	void (*signals_cb[MAXSIGNUM])(server_t *server, int signum);
 	void (*setup_server)(server_t *server);
-	void (*setup_uvhandle)(uv_handle_t *handle, const char *what);
 	void (*setup_channel)(channel_t *channel);
 };
 
@@ -204,6 +214,7 @@ struct server_ {
 	int (*setup_server)(server_t *server, uv_loop_t *uvloop);
 	uv_loop_t *uvloop;
 	void *data;
+	data_destroy_f data_destroy;
 };
 
 calllater_t *add_calllater(calllater_t *cl, call_later f, void *data,
@@ -223,10 +234,16 @@ code_t callup_context(channelhandlerctx_t *ctx, int event,
 channelhandler_t *find_channelhandler(channel_t *channel, const char *name);
 code_t add_channelhandlers(channel_t *channel, channelhandlers_t handlers[],
 						   size_t numofhandlers);
+int channel_fd(channel_t *channel);
 channel_t *create_channel(void *data, data_destroy_f data_destroy);
 channel_t *hold_channel(channel_t *channel);
 void release_channel(channel_t *channel);
+code_t set_channel_data(channel_t *channel,
+						void *data, data_destroy_f data_destroy);
 code_t add_server(server_config_t *config);
+code_t set_server_data(server_t *server,
+					   void *data, data_destroy_f data_destroy);
+int server_fd(server_t *server);
 code_t start_server(void);
 
 #endif

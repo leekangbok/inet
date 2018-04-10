@@ -11,7 +11,7 @@ typedef struct {
 	int hello_timeout;
 } echo_stage1_t;
 
-code_t on_after_work(calllater_t *cl, void *data, int status)
+static code_t on_after_work(calllater_t *cl, void *data, int status)
 {
 	prlog(LOGD, "complete(%p), status: %d", cl, status);
 	if (status < 0)
@@ -26,7 +26,7 @@ code_t on_after_work(calllater_t *cl, void *data, int status)
 	return SUCCESS;
 }
 
-code_t on_work(calllater_t *cl, void *data, int status)
+static code_t on_work(calllater_t *cl, void *data, int status)
 {
 	prlog(LOGD, "Sleeping...");
 	sleep(1);
@@ -133,8 +133,16 @@ static code_t write_done_stage3(channelhandlerctx_t *ctx,
 	return callup(ctx, data, datalen);
 }
 
+void setup_echo_server(server_t *server)
+{
+	int listen_fd = server_fd(server);
+
+	set_server_data(server, NULL, NULL);
+}
+
 void setup_echo_channel(channel_t *channel)
 {
+	int fd = channel_fd(channel);
 	echo_stage1_t *echo_stage1 = icalloc(sizeof(*echo_stage1));
 
 	channelhandlers_t handlers[] = {{

@@ -4,6 +4,7 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ACMD_NEW_DATAGRAM	include/i_net.h	95;"	d
 ACMD_NEW_TCP_CONN	include/i_net.h	94;"	d
 ALIGNMENT0	src/i_mem.c	7;"	d	file:
 CC	Makefile	/^CC                    = $(CXX)$/;"	m
@@ -20,15 +21,15 @@ DEPS	Makefile	/^DEPS    = $(foreach f, $(OBJS), $(addprefix $(dir $(f))., $(pats
 DEP_OPT	Makefile	/^DEP_OPT = $(shell if `$(CC) --version | grep -i "GCC" >\/dev\/null`; then \\$/;"	m
 ETAGS	Makefile	/^ETAGS = etags$/;"	m
 ETAGSFLAGS	Makefile	/^ETAGSFLAGS =$/;"	m
-EVENT_ACTIVE	include/i_net.h	127;"	d
-EVENT_ERROR	include/i_net.h	132;"	d
-EVENT_ERRORCOMPLETE	include/i_net.h	133;"	d
-EVENT_IDLE	include/i_net.h	134;"	d
-EVENT_MAX	include/i_net.h	135;"	d
-EVENT_READ	include/i_net.h	128;"	d
-EVENT_READCOMPLETE	include/i_net.h	129;"	d
-EVENT_WRITE	include/i_net.h	130;"	d
-EVENT_WRITECOMPLETE	include/i_net.h	131;"	d
+EVENT_ACTIVE	include/i_net.h	136;"	d
+EVENT_ERROR	include/i_net.h	141;"	d
+EVENT_ERRORCOMPLETE	include/i_net.h	142;"	d
+EVENT_IDLE	include/i_net.h	143;"	d
+EVENT_MAX	include/i_net.h	144;"	d
+EVENT_READ	include/i_net.h	137;"	d
+EVENT_READCOMPLETE	include/i_net.h	138;"	d
+EVENT_WRITE	include/i_net.h	139;"	d
+EVENT_WRITECOMPLETE	include/i_net.h	140;"	d
 EXTRA_CFLAGS	Makefile	/^EXTRA_CFLAGS           =$/;"	m
 EXTRA_CFLAGS_LINUX	Makefile	/^EXTRA_CFLAGS_LINUX     =$/;"	m
 EXTRA_CFLAGS_MACOS	Makefile	/^EXTRA_CFLAGS_MACOS     =$/;"	m
@@ -38,7 +39,7 @@ EXTRA_LDFLAGS_LINUX	Makefile	/^EXTRA_LDFLAGS_LINUX    = -Wl,--gc-sections -Wl,--
 EXTRA_LDFLAGS_MACOS	Makefile	/^EXTRA_LDFLAGS_MACOS    = -Wl,-search_paths_first -Wl,-dead_strip -v   # deleting unused code for Pear, for minimal exe size$/;"	m
 EXTRA_LDFLAGS_WINDOWS	Makefile	/^EXTRA_LDFLAGS_WINDOWS  =$/;"	m
 FAIL	include/i_net.h	/^	FAIL,$/;"	e	enum:code_
-HANDLER_NAME_MAX	include/i_net.h	116;"	d
+HANDLER_NAME_MAX	include/i_net.h	124;"	d
 HDREXTS	Makefile	/^HDREXTS = .h .H .hh .hpp .HPP .h++ .hxx .hp$/;"	m
 HEADERS	Makefile	/^HEADERS = $(foreach d,$(SRCDIRS),$(wildcard $(addprefix $(d)\/*,$(HDREXTS))))$/;"	m
 HLL_HEAD	include/llist.h	368;"	d
@@ -79,15 +80,15 @@ LOGC	include/i_print.h	7;"	d
 LOGD	include/i_print.h	4;"	d
 LOGI	include/i_print.h	5;"	d
 LOGW	include/i_print.h	6;"	d
-MAXSIGNUM	include/i_net.h	178;"	d
-NUM_WORKERS	src/i_net.c	27;"	d	file:
+MAXSIGNUM	include/i_net.h	189;"	d
+NUM_WORKERS	src/i_net.c	28;"	d	file:
 OBJS	Makefile	/^OBJS    = $(addsuffix .o, $(basename $(SOURCES)))$/;"	m
 OUTPTR0	src/i_mem.c	8;"	d	file:
 PEERCLOSED	include/i_net.h	/^	PEERCLOSED,$/;"	e	enum:code_
 PROGRAM	Makefile	/^PROGRAM                = app # libilib.so$/;"	m
 RM	Makefile	/^RM     = rm -f$/;"	m
-SERVERTYPE_TCP	include/i_net.h	200;"	d
-SERVERTYPE_UDP	include/i_net.h	201;"	d
+SERVERTYPE_TCP	include/i_net.h	210;"	d
+SERVERTYPE_UDP	include/i_net.h	211;"	d
 SOURCES	Makefile	/^SOURCES = $(foreach d,$(SRCDIRS),$(wildcard $(addprefix $(d)\/*,$(SRCEXTS))))$/;"	m
 SRCDIRS	Makefile	/^	SRCDIRS := $(shell find $(SRCDIRS) -type d)$/;"	m
 SRCDIRS	Makefile	/^SRCDIRS               :=$/;"	m
@@ -98,12 +99,14 @@ SUCCESS	include/i_net.h	/^	SUCCESS,$/;"	e	enum:code_
 TIMEOUT	include/i_net.h	/^	TIMEOUT,$/;"	e	enum:code_
 UNAME_S	Makefile	/^UNAME_S  := $(shell uname -s)$/;"	m
 _ECHO_H	sample_app/echo/echo.h	2;"	d
+_ECHO_UDP_H	sample_app/echo_udp/echo_udp.h	2;"	d
 _IPRINT_H	include/i_print.h	2;"	d
 _I_ATOMIC_H	include/i_atomic.h	2;"	d
 _I_MACRO_H	include/i_macro.h	2;"	d
 _I_MEM_H	include/i_mem.h	2;"	d
 _I_NET_H	include/i_net.h	2;"	d
 _I_NET_TCP_H	include/i_net_tcp.h	2;"	d
+_I_NET_UDP_H	include/i_net_udp.h	2;"	d
 _LLIST_H	include/llist.h	2;"	d
 __container_of__	include/llist.h	23;"	d
 __hll_del	include/llist.h	/^static inline void __hll_del(struct hll_node *n)$/;"	f
@@ -120,19 +123,22 @@ __spin_unlock	include/i_atomic.h	9;"	d
 __spinlock	include/i_atomic.h	6;"	d
 active	include/i_net.h	/^	channelhandler_f active;$/;"	m	struct:__anon6
 active_stage2	sample_app/echo/echo.c	/^static code_t active_stage2(channelhandlerctx_t *ctx,$/;"	f	file:
+active_stage2	sample_app/echo_udp/echo_udp.c	/^static code_t active_stage2(channelhandlerctx_t *ctx,$/;"	f	file:
 add_calllater	src/i_net.c	/^calllater_t *add_calllater(calllater_t *cl, call_later f, void *data,$/;"	f
 add_channelhandlers	src/i_net.c	/^code_t add_channelhandlers(channel_t *channel, channelhandlers_t handlers[],$/;"	f
 add_server	src/i_net.c	/^code_t add_server(server_config_t *config)$/;"	f
-addr	include/i_net.h	/^		struct sockaddr addr;$/;"	m	union:server_::__anon12	typeref:struct:server_::__anon12::sockaddr
+addr	include/i_net.h	/^			struct sockaddr addr;$/;"	m	struct:__anon7::__anon8::__anon10	typeref:struct:__anon7::__anon8::__anon10::sockaddr
+addr	include/i_net.h	/^		struct sockaddr addr;$/;"	m	union:server_::__anon14	typeref:struct:server_::__anon14::sockaddr
 addr	include/i_net.h	/^	const struct sockaddr *addr;$/;"	m	struct:__anon3	typeref:struct:__anon3::sockaddr
-addr	include/i_net.h	/^	} addr;$/;"	m	struct:server_	typeref:union:server_::__anon12
-addr4	include/i_net.h	/^		struct sockaddr_in addr4;$/;"	m	union:server_::__anon12	typeref:struct:server_::__anon12::sockaddr_in
-addr6	include/i_net.h	/^		struct sockaddr_in6 addr6;$/;"	m	union:server_::__anon12	typeref:struct:server_::__anon12::sockaddr_in6
+addr	include/i_net.h	/^	} addr;$/;"	m	struct:server_	typeref:union:server_::__anon14
+addr4	include/i_net.h	/^		struct sockaddr_in addr4;$/;"	m	union:server_::__anon14	typeref:struct:server_::__anon14::sockaddr_in
+addr6	include/i_net.h	/^		struct sockaddr_in6 addr6;$/;"	m	union:server_::__anon14	typeref:struct:server_::__anon14::sockaddr_in6
 after_work	include/i_net.h	/^	call_later after_work;$/;"	m	struct:__anon2
 alignment0	src/i_mem.c	/^union alignment0 {$/;"	u	file:
 async_cmd_t	include/i_net.h	/^} async_cmd_t;$/;"	t	typeref:struct:__anon7
 bindaddr	include/i_net.h	/^	const char *bindaddr;$/;"	m	struct:server_config_
 bindport	include/i_net.h	/^	int bindport;$/;"	m	struct:server_config_
+buf	include/i_net.h	/^			uv_buf_t buf;$/;"	m	struct:__anon7::__anon8::__anon10
 buf	include/i_net.h	/^	uv_buf_t buf;$/;"	m	struct:__anon3
 buf_	include/i_net.h	/^struct buf_ {$/;"	s
 buf_t	include/i_net.h	/^typedef struct buf_ buf_t;$/;"	t	typeref:struct:buf_
@@ -150,6 +156,7 @@ callup_context	src/i_net.c	/^code_t callup_context(channelhandlerctx_t *ctx, int
 channel	include/i_net.h	/^	channel_t *channel;$/;"	m	struct:__anon3
 channel	include/i_net.h	/^	channel_t *channel;$/;"	m	struct:channelpipeline_
 channel_	include/i_net.h	/^struct channel_ {$/;"	s
+channel_fd	src/i_net.c	/^int channel_fd(channel_t *channel)$/;"	f
 channel_idle_timer_expire	src/i_net_tcp.c	/^static void channel_idle_timer_expire(uv_timer_t *handle)$/;"	f	file:
 channel_idle_timer_reset	src/i_net_tcp.c	/^void channel_idle_timer_reset(channel_t *channel)$/;"	f
 channel_shutdown	src/i_net_tcp.c	/^void channel_shutdown(channel_t *channel, code_t icode)$/;"	f
@@ -170,6 +177,7 @@ cmd_spinlock	include/i_net.h	/^	pthread_spinlock_t cmd_spinlock;$/;"	m	struct:se
 code_	include/i_net.h	/^typedef enum code_ {$/;"	g
 code_t	include/i_net.h	/^} code_t;$/;"	t	typeref:enum:code_
 config	include/i_net.h	/^	server_config_t config;$/;"	m	struct:server_
+conn	include/i_net.h	/^		struct sockaddr conn;$/;"	m	union:channel_::__anon12	typeref:struct:channel_::__anon12::sockaddr
 consume_async_cmd	src/i_net.c	/^static void consume_async_cmd(uv_async_t *handle)$/;"	f	file:
 containerof	include/i_net.h	7;"	d
 containerof	include/i_net.h	8;"	d
@@ -191,12 +199,15 @@ data_destroy	include/i_net.h	/^	data_destroy_f data_destroy;$/;"	m	struct:__anon
 data_destroy	include/i_net.h	/^	data_destroy_f data_destroy;$/;"	m	struct:callback_
 data_destroy	include/i_net.h	/^	data_destroy_f data_destroy;$/;"	m	struct:channel_
 data_destroy	include/i_net.h	/^	data_destroy_f data_destroy;$/;"	m	struct:channelhandler_
+data_destroy	include/i_net.h	/^	data_destroy_f data_destroy;$/;"	m	struct:server_
 data_destroy_f	include/i_net.h	/^typedef void (*data_destroy_f)(void *data);$/;"	t
+datalen	include/i_net.h	/^			ssize_t datalen;$/;"	m	struct:__anon7::__anon8::__anon10
 datalen	include/i_net.h	/^	ssize_t datalen;$/;"	m	struct:__anon3
 datalen	include/i_net.h	/^	ssize_t datalen;$/;"	m	struct:buf_
 dbl	src/i_mem.c	/^	double dbl;$/;"	m	union:alignment0	file:
 def_inbound_handler	src/i_net.c	/^static code_t def_inbound_handler(channelhandlerctx_t *ctx, void *data,$/;"	f	file:
 def_outbound_handler	src/i_net.c	/^static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,$/;"	f	file:
+done_datagram_send	src/i_net_udp.c	/^void done_datagram_send(uv_udp_send_t *req, int status)$/;"	f
 done_stream_write	src/i_net_tcp.c	/^void done_stream_write(uv_write_t *req, int status)$/;"	f
 echo_stage1_t	sample_app/echo/echo.c	/^} echo_stage1_t;$/;"	t	typeref:struct:__anon1	file:
 error	include/i_net.h	/^	channelhandler_f error;$/;"	m	struct:__anon6
@@ -206,10 +217,11 @@ f	include/i_net.h	/^	call_later f;$/;"	m	struct:callback_
 fd	include/i_net.h	/^			int fd;$/;"	m	struct:__anon7::__anon8::__anon9
 find_channelhandler	src/i_net.c	/^channelhandler_t *find_channelhandler(channel_t *channel, const char *name)$/;"	f
 first	include/llist.h	/^	struct hll_node *first;$/;"	m	struct:hll_head	typeref:struct:hll_head::hll_node
-h	include/i_net.h	/^	} h;$/;"	m	struct:channel_	typeref:union:channel_::__anon10
-h	include/i_net.h	/^	} h;$/;"	m	struct:server_	typeref:union:server_::__anon11
-handle	include/i_net.h	/^		uv_handle_t handle;$/;"	m	union:channel_::__anon10
-handle	include/i_net.h	/^		uv_handle_t handle;$/;"	m	union:server_::__anon11
+h	include/i_net.h	/^	} h;$/;"	m	struct:channel_	typeref:union:channel_::__anon11
+h	include/i_net.h	/^	} h;$/;"	m	struct:server_	typeref:union:server_::__anon13
+handle	include/i_net.h	/^			uv_udp_t *handle;$/;"	m	struct:__anon7::__anon8::__anon10
+handle	include/i_net.h	/^		uv_handle_t handle;$/;"	m	union:channel_::__anon11
+handle	include/i_net.h	/^		uv_handle_t handle;$/;"	m	union:server_::__anon13
 handler	include/i_net.h	/^	channelhandler_t *handler;$/;"	m	struct:channelhandlerctx_
 handler	include/i_net.h	/^	channelhandler_t *handler;$/;"	m	struct:channelpipeline_
 hello_timeout	sample_app/echo/echo.c	/^	int hello_timeout;$/;"	m	struct:__anon1	file:
@@ -236,6 +248,7 @@ icalloc	include/i_mem.h	8;"	d
 idle	include/i_net.h	/^	channelhandler_f idle;$/;"	m	struct:__anon6
 idle_notify	include/i_net.h	/^	int idle_notify;$/;"	m	struct:server_config_
 idle_stage1	sample_app/echo/echo.c	/^static code_t idle_stage1(channelhandlerctx_t *ctx,$/;"	f	file:
+idle_stage1	sample_app/echo_udp/echo_udp.c	/^static code_t idle_stage1(channelhandlerctx_t *ctx,$/;"	f	file:
 idle_timeout	include/i_net.h	/^	int idle_timeout;$/;"	m	struct:channel_
 idle_timeout	include/i_net.h	/^	int idle_timeout;$/;"	m	struct:server_config_
 idle_timer_handle	include/i_net.h	/^	uv_timer_t idle_timer_handle;$/;"	m	struct:channel_
@@ -253,7 +266,7 @@ ll	include/i_net.h	/^	struct ll_head ll;$/;"	m	struct:__anon7	typeref:struct:__a
 ll	include/i_net.h	/^	struct ll_head ll;$/;"	m	struct:callback_	typeref:struct:callback_::ll_head
 ll	include/i_net.h	/^	struct ll_head ll;$/;"	m	struct:channel_	typeref:struct:channel_::ll_head
 ll	include/i_net.h	/^	struct ll_head ll;$/;"	m	struct:server_	typeref:struct:server_::ll_head
-ll	src/i_net.c	/^	struct ll_head ll;$/;"	m	struct:__anon13	typeref:struct:__anon13::ll_head	file:
+ll	src/i_net.c	/^	struct ll_head ll;$/;"	m	struct:__anon15	typeref:struct:__anon15::ll_head	file:
 ll_add	include/llist.h	/^static inline void ll_add(struct ll_head *new, struct ll_head *head)$/;"	f
 ll_add_tail	include/llist.h	/^static inline void ll_add_tail(struct ll_head *new, struct ll_head *head)$/;"	f
 ll_del	include/llist.h	/^static inline void ll_del(struct ll_head *entry)$/;"	f
@@ -278,28 +291,33 @@ ll_splice_init	include/llist.h	/^static inline void ll_splice_init(struct ll_hea
 locate_handler_context	src/i_net.c	/^static void locate_handler_context(channelhandler_t *handler,$/;"	f	file:
 loglevel	src/i_print.c	/^int loglevel = LOGD;$/;"	v
 main	main.c	/^int main(int argc, char *argv[])$/;"	f
-mychannel	include/i_net.h	123;"	d
-myhandler	include/i_net.h	124;"	d
+mychannel	include/i_net.h	132;"	d
+myhandler	include/i_net.h	131;"	d
+myserver	include/i_net.h	133;"	d
 name	include/i_net.h	/^	char name[HANDLER_NAME_MAX + 4];$/;"	m	struct:channelhandlerctx_
 name	include/i_net.h	/^	char name[HANDLER_NAME_MAX];$/;"	m	struct:channelhandler_
 name	include/i_net.h	/^	const char *name;$/;"	m	struct:__anon6
 name	include/i_net.h	/^	const char *name;$/;"	m	struct:server_config_
 new_cmds	include/i_net.h	/^	struct ll_head new_cmds;$/;"	m	struct:server_worker_	typeref:struct:server_worker_::ll_head
 new_connection	include/i_net.h	/^		} new_connection;$/;"	m	union:__anon7::__anon8	typeref:struct:__anon7::__anon8::__anon9
+new_datagram	include/i_net.h	/^		} new_datagram;$/;"	m	union:__anon7::__anon8	typeref:struct:__anon7::__anon8::__anon10
 next	include/llist.h	/^	struct hll_node *next, **pprev;$/;"	m	struct:hll_node	typeref:struct:hll_node::hll_node
 next	include/llist.h	/^	struct ll_head *next, *prev;$/;"	m	struct:ll_head	typeref:struct:ll_head::ll_head
 next_ctx	include/i_net.h	/^	channelhandlerctx_t *next_ctx;$/;"	m	struct:channelhandlerctx_
 notify_async_cmd	src/i_net.c	/^void notify_async_cmd(async_cmd_t *cmd)$/;"	f
 numofhandler	include/i_net.h	/^	int numofhandler;$/;"	m	struct:channelpipeline_
-on_after_work	sample_app/echo/echo.c	/^code_t on_after_work(calllater_t *cl, void *data, int status)$/;"	f
+on_after_work	sample_app/echo/echo.c	/^static code_t on_after_work(calllater_t *cl, void *data, int status)$/;"	f	file:
+on_after_work	sample_app/echo_udp/echo_udp.c	/^static code_t on_after_work(calllater_t *cl, void *data, int status)$/;"	f	file:
 on_after_working	src/i_net.c	/^static void on_after_working(uv_work_t *req, int status)$/;"	f	file:
 on_channel_close	src/i_net_tcp.c	/^static void on_channel_close(uv_handle_t *handle)$/;"	f	file:
 on_channel_idle_timer_close	src/i_net_tcp.c	/^static void on_channel_idle_timer_close(uv_handle_t *handle)$/;"	f	file:
 on_channel_shutdown	src/i_net_tcp.c	/^static void on_channel_shutdown(uv_shutdown_t *req, int status)$/;"	f	file:
 on_connect_client	src/i_net_tcp.c	/^static void on_connect_client(uv_stream_t *stream, int status)$/;"	f	file:
 on_data	src/i_net_tcp.c	/^static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)$/;"	f	file:
+on_data	src/i_net_udp.c	/^static void on_data(uv_udp_t *handle, ssize_t datalen, const uv_buf_t *buf,$/;"	f	file:
 on_work	include/i_net.h	/^	call_later on_work;$/;"	m	struct:__anon2
-on_work	sample_app/echo/echo.c	/^code_t on_work(calllater_t *cl, void *data, int status)$/;"	f
+on_work	sample_app/echo/echo.c	/^static code_t on_work(calllater_t *cl, void *data, int status)$/;"	f	file:
+on_work	sample_app/echo_udp/echo_udp.c	/^static code_t on_work(calllater_t *cl, void *data, int status)$/;"	f	file:
 on_working	src/i_net.c	/^static void on_working(uv_work_t *req)$/;"	f	file:
 operation	include/i_net.h	/^	channelhandler_f operation;$/;"	m	struct:channelhandlerctx_
 origin_conn_closed	src/i_net_tcp.c	/^static void origin_conn_closed(uv_handle_t *handle)$/;"	f	file:
@@ -317,20 +335,25 @@ qwork	include/i_net.h	/^		queue_work_t qwork;$/;"	m	union:calllater_::__anon5
 read	include/i_net.h	/^	channelhandler_f read;$/;"	m	struct:__anon6
 read_complete	include/i_net.h	/^	channelhandler_f read_complete;$/;"	m	struct:__anon6
 read_stage1	sample_app/echo/echo.c	/^static code_t read_stage1(channelhandlerctx_t *ctx,$/;"	f	file:
+read_stage1	sample_app/echo_udp/echo_udp.c	/^static code_t read_stage1(channelhandlerctx_t *ctx,$/;"	f	file:
 read_stage2	sample_app/echo/echo.c	/^static code_t read_stage2(channelhandlerctx_t *ctx,$/;"	f	file:
+read_stage2	sample_app/echo_udp/echo_udp.c	/^static code_t read_stage2(channelhandlerctx_t *ctx,$/;"	f	file:
 read_stage3	sample_app/echo/echo.c	/^static code_t read_stage3(channelhandlerctx_t *ctx,$/;"	f	file:
+read_stage3	sample_app/echo_udp/echo_udp.c	/^static code_t read_stage3(channelhandlerctx_t *ctx,$/;"	f	file:
 refs	include/i_net.h	/^	int refs;$/;"	m	struct:buf_
 refs	include/i_net.h	/^	int refs;$/;"	m	struct:channel_
 release_channel	src/i_net.c	/^void release_channel(channel_t *channel)$/;"	f
 req	include/i_net.h	/^		uv_req_t req;$/;"	m	union:__anon3::__anon4
 req	include/i_net.h	/^	} req;$/;"	m	struct:__anon3	typeref:union:__anon3::__anon4
 run_calllater	src/i_net.c	/^void run_calllater(calllater_t *cl, int status)$/;"	f
+server	include/i_net.h	/^			server_t *server;$/;"	m	struct:__anon7::__anon8::__anon10
 server	include/i_net.h	/^			server_t *server;$/;"	m	struct:__anon7::__anon8::__anon9
 server	include/i_net.h	/^	server_t *server;$/;"	m	struct:channel_
-server	src/i_net.c	/^	server_t *server;$/;"	m	struct:__anon13	file:
+server	src/i_net.c	/^	server_t *server;$/;"	m	struct:__anon15	file:
 server_	include/i_net.h	/^struct server_ {$/;"	s
 server_config_	include/i_net.h	/^struct server_config_ {$/;"	s
 server_config_t	include/i_net.h	/^typedef struct server_config_ server_config_t;$/;"	t	typeref:struct:server_config_
+server_fd	src/i_net.c	/^int server_fd(server_t *server)$/;"	f
 server_t	include/i_net.h	/^typedef struct server_ server_t;$/;"	t	typeref:struct:server_
 server_worker_	include/i_net.h	/^struct server_worker_ {$/;"	s
 server_worker_t	include/i_net.h	/^typedef struct server_worker_ server_worker_t;$/;"	t	typeref:struct:server_worker_
@@ -339,26 +362,30 @@ servertype	include/i_net.h	/^	int servertype;$/;"	m	struct:server_
 set_channel_data	src/i_net.c	/^code_t set_channel_data(channel_t *channel,$/;"	f
 set_def_inbound_handler	src/i_net.c	/^static void set_def_inbound_handler(channelhandler_t *channelhandler)$/;"	f	file:
 set_def_outbound_handler	src/i_net.c	/^static void set_def_outbound_handler(channelhandler_t *channelhandler)$/;"	f	file:
+set_server_data	src/i_net.c	/^code_t set_server_data(server_t *server,$/;"	f
 setup_channel	include/i_net.h	/^	void (*setup_channel)(channel_t *channel);$/;"	m	struct:server_config_
 setup_echo_channel	sample_app/echo/echo.c	/^void setup_echo_channel(channel_t *channel)$/;"	f
+setup_echo_server	sample_app/echo/echo.c	/^void setup_echo_server(server_t *server)$/;"	f
+setup_echo_udp_channel	sample_app/echo_udp/echo_udp.c	/^void setup_echo_udp_channel(channel_t *channel)$/;"	f
+setup_echo_udp_server	sample_app/echo_udp/echo_udp.c	/^void setup_echo_udp_server(server_t *server)$/;"	f
 setup_server	include/i_net.h	/^	int (*setup_server)(server_t *server, uv_loop_t *uvloop);$/;"	m	struct:server_
 setup_server	include/i_net.h	/^	void (*setup_server)(server_t *server);$/;"	m	struct:server_config_
 setup_tcp_server	src/i_net_tcp.c	/^int setup_tcp_server(server_t *server, uv_loop_t *uvloop)$/;"	f
-setup_uvhandle	include/i_net.h	/^	void (*setup_uvhandle)(uv_handle_t *handle, const char *what);$/;"	m	struct:server_config_
-shutdown_handle	include/i_net.h	/^	uv_shutdown_t shutdown_handle;$/;"	m	struct:channel_
-signal_cb	src/i_net.c	/^	void (*signal_cb)(server_t *server, int signum);$/;"	m	struct:__anon13	file:
+setup_udp_server	src/i_net_udp.c	/^int setup_udp_server(server_t *server, uv_loop_t *uvloop)$/;"	f
+shutdown_handle	include/i_net.h	/^		uv_shutdown_t shutdown_handle;$/;"	m	union:channel_::__anon12
+signal_cb	src/i_net.c	/^	void (*signal_cb)(server_t *server, int signum);$/;"	m	struct:__anon15	file:
 signal_cb	src/i_net.c	/^static void signal_cb(uv_signal_t *handle, int signum)$/;"	f	file:
-signal_handle_t	src/i_net.c	/^} signal_handle_t;$/;"	t	typeref:struct:__anon13	file:
+signal_handle_t	src/i_net.c	/^} signal_handle_t;$/;"	t	typeref:struct:__anon15	file:
 signal_setup	src/i_net.c	/^static int signal_setup(server_t *server, uv_loop_t *uvloop)$/;"	f	file:
 signals_cb	include/i_net.h	/^	void (*signals_cb[MAXSIGNUM])(server_t *server, int signum);$/;"	m	struct:server_config_
 size	src/i_mem.c	/^	size_t size;$/;"	m	union:alignment0	file:
 start_server	src/i_net.c	/^code_t start_server(void)$/;"	f
 start_workers	src/i_net.c	/^static void start_workers(void)$/;"	f	file:
-stream	include/i_net.h	/^		uv_stream_t stream;$/;"	m	union:channel_::__anon10
-stream	include/i_net.h	/^		uv_stream_t stream;$/;"	m	union:server_::__anon11
+stream	include/i_net.h	/^		uv_stream_t stream;$/;"	m	union:channel_::__anon11
+stream	include/i_net.h	/^		uv_stream_t stream;$/;"	m	union:server_::__anon13
 tcp	include/i_net.h	/^			uv_tcp_t tcp;$/;"	m	struct:__anon7::__anon8::__anon9
-tcp	include/i_net.h	/^		uv_tcp_t tcp;$/;"	m	union:channel_::__anon10
-tcp	include/i_net.h	/^		uv_tcp_t tcp;$/;"	m	union:server_::__anon11
+tcp	include/i_net.h	/^		uv_tcp_t tcp;$/;"	m	union:channel_::__anon11
+tcp	include/i_net.h	/^		uv_tcp_t tcp;$/;"	m	union:server_::__anon13
 thread_id	include/i_net.h	/^	uv_thread_t thread_id;$/;"	m	struct:server_worker_
 trace_allocator_init	src/i_mem.c	/^void trace_allocator_init(void)$/;"	f
 trace_calloc	src/i_mem.c	/^void *trace_calloc(size_t size)$/;"	f
@@ -366,8 +393,7 @@ trace_ifree	src/i_mem.c	/^void trace_ifree(void **pp)$/;"	f
 trace_malloc	src/i_mem.c	/^void *trace_malloc(size_t size)$/;"	f
 trace_realloc	src/i_mem.c	/^void *trace_realloc(void *ptr, size_t size)$/;"	f
 trace_strdup	src/i_mem.c	/^char *trace_strdup(const char *s)$/;"	f
-udp	include/i_net.h	/^		uv_udp_t udp;$/;"	m	union:channel_::__anon10
-udp	include/i_net.h	/^		uv_udp_t udp;$/;"	m	union:server_::__anon11
+udp	include/i_net.h	/^		uv_udp_t udp;$/;"	m	union:server_::__anon13
 udp_write	include/i_net.h	/^		uv_udp_send_t udp_write;$/;"	m	union:__anon3::__anon4
 uvbuf_alloc	src/i_net.c	/^void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,$/;"	f
 uvloop	include/i_net.h	/^	uv_loop_t *uvloop;$/;"	m	struct:channel_
@@ -376,6 +402,7 @@ uvsignals	src/i_net.c	/^static uv_signal_t uvsignals[MAXSIGNUM];$/;"	v	file:
 wait_for_thread_start	src/i_net.c	/^static void wait_for_thread_start(int nthreads)$/;"	f	file:
 work	include/i_net.h	/^	uv_work_t work;$/;"	m	struct:__anon2
 worker_thread_f	src/i_net.c	/^static void worker_thread_f(void *arg)$/;"	f	file:
+worker_thread_f	src/i_net_udp.c	/^static void worker_thread_f(void *arg)$/;"	f	file:
 workers	src/i_net.c	/^static server_worker_t workers[NUM_WORKERS];$/;"	v	file:
 write	include/i_net.h	/^		uv_write_t write;$/;"	m	union:__anon3::__anon4
 write	include/i_net.h	/^		write_calllater_t write;$/;"	m	union:calllater_::__anon5
@@ -384,7 +411,12 @@ write_and_close	sample_app/echo/echo.c	/^static code_t write_and_close(calllater
 write_calllater_t	include/i_net.h	/^} write_calllater_t;$/;"	t	typeref:struct:__anon3
 write_complete	include/i_net.h	/^	channelhandler_f write_complete;$/;"	m	struct:__anon6
 write_done_stage1	sample_app/echo/echo.c	/^static code_t write_done_stage1(channelhandlerctx_t *ctx,$/;"	f	file:
+write_done_stage1	sample_app/echo_udp/echo_udp.c	/^static code_t write_done_stage1(channelhandlerctx_t *ctx,$/;"	f	file:
 write_done_stage3	sample_app/echo/echo.c	/^static code_t write_done_stage3(channelhandlerctx_t *ctx,$/;"	f	file:
+write_done_stage3	sample_app/echo_udp/echo_udp.c	/^static code_t write_done_stage3(channelhandlerctx_t *ctx,$/;"	f	file:
 write_stage1	sample_app/echo/echo.c	/^static code_t write_stage1(channelhandlerctx_t *ctx,$/;"	f	file:
+write_stage1	sample_app/echo_udp/echo_udp.c	/^static code_t write_stage1(channelhandlerctx_t *ctx,$/;"	f	file:
 write_stage2	sample_app/echo/echo.c	/^static code_t write_stage2(channelhandlerctx_t *ctx,$/;"	f	file:
+write_stage2	sample_app/echo_udp/echo_udp.c	/^static code_t write_stage2(channelhandlerctx_t *ctx,$/;"	f	file:
 write_stage3	sample_app/echo/echo.c	/^static code_t write_stage3(channelhandlerctx_t *ctx,$/;"	f	file:
+write_stage3	sample_app/echo_udp/echo_udp.c	/^static code_t write_stage3(channelhandlerctx_t *ctx,$/;"	f	file:

@@ -188,15 +188,14 @@ int setup_tcp_server(server_t *server, uv_loop_t *uvloop)
 
 	if (server->config.setup_server)
 		server->config.setup_server(server);
-	if (server->config.setup_uvhandle)
-		server->config.setup_uvhandle(&server->h.handle, "TCPServerBind");
 
 	assert(0 == uv_listen(&server->h.stream, 128, on_connect_client));
 
 	server->servertype = SERVERTYPE_TCP;
 
-	prlog(LOGD, "%s server(%p) listening on %s:%d",
+	prlog(LOGD, "%s server(%p) listening on %s:%d(%s)",
 		  server->config.name, server,
-		  server->config.bindaddr, server->config.bindport);
+		  server->config.bindaddr, server->config.bindport,
+		  server->config.servertype);
 	return 1;
 }

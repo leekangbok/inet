@@ -7,6 +7,7 @@
 #include <i_mem.h>
 #include <i_net.h>
 #include <i_net_tcp.h>
+#include <i_net_udp.h>
 #include <i_print.h>
 
 typedef struct {
@@ -88,6 +89,11 @@ static server_t predefined_server[] = {
 				},
 	.setup_server = setup_tcp_server,},
 	{ .config = {
+					.servertype = "udp_ip4",
+				},
+	.setup_server = setup_udp_server,},
+
+	{ .config = {
 					.servertype = NULL,
 				},
 	.setup_server = NULL,},
@@ -166,6 +172,16 @@ static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,
 		}
 		break;
 	case SERVERTYPE_UDP:
+		if (!uv_is_closing(&ctx->myserver->h.handle)) {
+			status = uv_udp_send(&cl->write.req.udp_write,
+								 &ctx->myserver->h.udp,
+								 &cl->write.buf, 1,
+								 &ctx->mychannel->conn,
+								 done_datagram_send);
+		}
+		if (status != 0) {
+			done_datagram_send(&cl->write.req.udp_write, status);
+		}
 		break;
 	default:
 		break;
@@ -280,6 +296,16 @@ void release_channel(channel_t *channel)
 	ll_del(&channel->ll);
 	pthread_spin_unlock(&channel->server->channels_spinlock);
 	ifree(channel);
+}
+
+int channel_fd(channel_t *channel)
+{
+	int fd, ret;
+
+	ret = uv_fileno(&channel->h.handle, &fd);
+	if (ret < 0)
+		return ret;
+	return fd;
 }
 
 channel_t *create_channel(void *data, data_destroy_f data_destroy)
@@ -518,6 +544,7 @@ static void consume_async_cmd(uv_async_t *handle)
 		case ACMD_NEW_TCP_CONN:
 			create_tcp_channel(handle->loop, me, cmd->new_connection.server,
 							   cmd->new_connection.fd);
+			break;
 		default:
 			break;
 		}
@@ -560,6 +587,32 @@ static void wait_for_thread_start(int nthreads)
 	while (init_count < nthreads) {
 		pthread_cond_wait(&init_cond, &init_lock);
 	}
+}
+
+code_t set_server_data(server_t *server,
+					   void *data, data_destroy_f data_destroy)
+{
+	if (server->data) {
+		if (server->data_destroy)
+			server->data_destroy(server->data);
+		else
+			ifree(server->data);
+	}
+
+	server->data = data;
+	server->data_destroy = data_destroy;
+
+	return SUCCESS;
+}
+
+int server_fd(server_t *server)
+{
+	int fd, ret;
+
+	ret = uv_fileno(&server->h.handle, &fd);
+	if (ret < 0)
+		return ret;
+	return fd;
 }
 
 code_t start_server(void)
