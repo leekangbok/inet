@@ -13,12 +13,18 @@ static code_t on_after_work(calllater_t *cl, void *data, int status)
 	if (status < 0)
 		return FAIL;
 
-	char *senddata = icalloc(100);
+	{
+		int i;
 
-	sprintf(senddata, "%s\n", "hello telnet");
-	calllater_t *wcl = create_write_req(senddata, strlen(senddata));
+		for (i = 0; i < 100; i++) {
+			char *senddata = icalloc(100);
 
-	callup_context(cl->qwork.ctx, EVENT_WRITE, wcl, sizeof(calllater_t));
+			sprintf(senddata, "%s\n", "hello telnet");
+			calllater_t *wcl = create_write_req(senddata, strlen(senddata));
+
+			callup_context(cl->qwork.ctx, EVENT_WRITE, wcl, sizeof(calllater_t));
+		}
+	}
 	return SUCCESS;
 }
 
@@ -75,6 +81,19 @@ static code_t write_stage2(channelhandlerctx_t *ctx,
 static code_t read_stage3(channelhandlerctx_t *ctx,
 						  void *data, ssize_t datalen)
 {
+	{
+		int i;
+
+		for (i = 0; i < 100; i++) {
+			char *senddata = icalloc(100);
+
+			sprintf(senddata, "%s\n", "hello telnet");
+			calllater_t *wcl = create_write_req(senddata, strlen(senddata));
+
+			callup_context(ctx, EVENT_WRITE, wcl, sizeof(calllater_t));
+		}
+	}
+
 	calllater_t *cl = create_write_req(data, datalen);
 	prlog(LOGD, "%s", ctx->name);
 	//return callup(ctx, data, datalen);

@@ -174,10 +174,8 @@ static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,
 	case SERVERTYPE_UDP:
 		if (!uv_is_closing(&ctx->myserver->h.handle)) {
 			status = uv_udp_send(&cl->write.req.udp_write,
-								 &ctx->myserver->h.udp,
-								 &cl->write.buf, 1,
-								 &ctx->mychannel->conn,
-								 done_datagram_send);
+								 &ctx->myserver->h.udp, &cl->write.buf, 1,
+								 &ctx->mychannel->conn, done_datagram_send);
 		}
 		if (status != 0) {
 			done_datagram_send(&cl->write.req.udp_write, status);

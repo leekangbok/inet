@@ -29,13 +29,16 @@ void done_datagram_send(uv_udp_send_t *req, int status)
 static void on_data(uv_udp_t *handle, ssize_t datalen, const uv_buf_t *buf,
 					const struct sockaddr *addr, unsigned flags)
 {
+	server_t *server;
+	channel_t *channel;
+
 	if (datalen <= 0) {
 		ifree(buf->base);
 		return;
 	}
 
-	server_t *server = containerof(handle, server_t, h);
-	channel_t *channel = create_channel(NULL, NULL);
+	server = containerof(handle, server_t, h);
+	channel = create_channel(NULL, NULL);
 
 	channel->server = server;
 	channel->uvloop = server->uvloop;
