@@ -53,6 +53,9 @@ int main(int argc, char *argv[])
 	config.setup_channel = setup_echo_udp_channel;
 	add_server(&config);
 
+	//add_mq_worker("mq_dba", NULL, 1);
+	//add_mq_worker("mq_dmc", NULL, 10);
+
 	start_server();
 
 	return 1;

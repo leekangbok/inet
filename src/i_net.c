@@ -538,8 +538,10 @@ static void *consume_async_cmd(uv_callback_t *handle, void *data)
 	default:
 		break;
 	}
-	ifree(cmd);
-	return "success";
+	cmd->result = 1;
+	cmd->resp = icalloc(30);
+	sprintf(cmd->resp, "%s", "hello kitty");
+	return cmd;
 }
 
 static void worker_thread_f(void *arg)

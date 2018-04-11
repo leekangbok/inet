@@ -87,8 +87,8 @@ OUTPTR0	src/i_mem.c	8;"	d	file:
 PEERCLOSED	include/i_net.h	/^	PEERCLOSED,$/;"	e	enum:code_
 PROGRAM	Makefile	/^PROGRAM                = app # libilib.so$/;"	m
 RM	Makefile	/^RM     = rm -f$/;"	m
-SERVERTYPE_TCP	include/i_net.h	209;"	d
-SERVERTYPE_UDP	include/i_net.h	210;"	d
+SERVERTYPE_TCP	include/i_net.h	210;"	d
+SERVERTYPE_UDP	include/i_net.h	211;"	d
 SOURCES	Makefile	/^SOURCES = $(foreach d,$(SRCDIRS),$(wildcard $(addprefix $(d)\/*,$(SRCEXTS))))$/;"	m
 SRCDIRS	Makefile	/^	SRCDIRS := $(shell find $(SRCDIRS) -type d)$/;"	m
 SRCDIRS	Makefile	/^SRCDIRS               :=$/;"	m
@@ -280,7 +280,6 @@ init_lock	src/i_net.c	/^static pthread_mutex_t init_lock;$/;"	v	file:
 irealloc	include/i_mem.h	9;"	d
 istrdup	include/i_mem.h	10;"	d
 ll	include/i_net.h	/^	struct ll_head ll;$/;"	m	struct:__anon2	typeref:struct:__anon2::ll_head
-ll	include/i_net.h	/^	struct ll_head ll;$/;"	m	struct:__anon7	typeref:struct:__anon7::ll_head
 ll	include/i_net.h	/^	struct ll_head ll;$/;"	m	struct:callback_	typeref:struct:callback_::ll_head
 ll	include/i_net.h	/^	struct ll_head ll;$/;"	m	struct:channel_	typeref:struct:channel_::ll_head
 ll	include/i_net.h	/^	struct ll_head ll;$/;"	m	struct:server_	typeref:struct:server_::ll_head
@@ -338,6 +337,7 @@ on_channel_shutdown	src/i_net_tcp.c	/^static void on_channel_shutdown(uv_shutdow
 on_connect_client	src/i_net_tcp.c	/^static void on_connect_client(uv_stream_t *stream, int status)$/;"	f	file:
 on_data	src/i_net_tcp.c	/^static void on_data(uv_stream_t *stream, ssize_t datalen, const uv_buf_t *buf)$/;"	f	file:
 on_data	src/i_net_udp.c	/^static void on_data(uv_udp_t *handle, ssize_t datalen, const uv_buf_t *buf,$/;"	f	file:
+on_result	src/i_net_tcp.c	/^static void *on_result(uv_callback_t *handle, void *result)$/;"	f	file:
 on_timer	uv_extension/uv_callback.c	/^void on_timer(uv_timer_t *timer) {$/;"	f
 on_work	include/i_net.h	/^	call_later on_work;$/;"	m	struct:__anon2
 on_work	sample_app/echo/echo.c	/^static code_t on_work(calllater_t *cl, void *data, int status)$/;"	f	file:
@@ -370,9 +370,11 @@ refs	include/i_net.h	/^	int refs;$/;"	m	struct:channel_
 release_channel	src/i_net.c	/^void release_channel(channel_t *channel)$/;"	f
 req	include/i_net.h	/^		uv_req_t req;$/;"	m	union:__anon3::__anon4
 req	include/i_net.h	/^	} req;$/;"	m	struct:__anon3	typeref:union:__anon3::__anon4
+result_async_cmd	include/i_net.h	/^	uv_callback_t result_async_cmd;$/;"	m	struct:server_
 run_calllater	src/i_net.c	/^void run_calllater(calllater_t *cl, int status)$/;"	f
 server	include/i_net.h	/^			server_t *server;$/;"	m	struct:__anon7::__anon8::__anon10
 server	include/i_net.h	/^			server_t *server;$/;"	m	struct:__anon7::__anon8::__anon9
+server	include/i_net.h	/^	server_t *server;$/;"	m	struct:__anon7
 server	include/i_net.h	/^	server_t *server;$/;"	m	struct:channel_
 server	src/i_net.c	/^	server_t *server;$/;"	m	struct:__anon16	file:
 server_	include/i_net.h	/^struct server_ {$/;"	s

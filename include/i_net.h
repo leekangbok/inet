@@ -34,12 +34,11 @@ typedef code_t (*channelhandler_f)(channelhandlerctx_t *ctx, void *data,
 typedef code_t (*call_later)(calllater_t *cl, void *data, int status);
 typedef void (*data_destroy_f)(void *data);
 
-struct buf_ {
-	void *data;
-	ssize_t datalen;
-	ssize_t buflen;
-	int refs;
-};
+typedef struct {
+	struct ll_head ll;
+	struct ll_head siblings;
+	char name[32];
+} mq_worker_t;
 
 typedef struct {
 	struct ll_head ll;
@@ -103,15 +102,10 @@ typedef struct {
 			uv_tcp_t tcp;
 			int fd;
 		} new_connection;
-		struct {
-			server_t *server;
-			uv_udp_t *handle;
-			struct sockaddr addr;
-			uv_buf_t buf;
-			ssize_t datalen;
-		} new_datagram;
 	};
 	server_t *server;
+	int result;
+	void *resp;
 } async_cmd_t;
 
 struct server_worker_ {

@@ -169,6 +169,7 @@ void * on_call_result(uv_callback_t *callback, void *data) {
 	result->called = 1;
 	result->data = data;
 	uv_stop(loop);
+	return NULL;
 }
 
 void on_timer(uv_timer_t *timer) {

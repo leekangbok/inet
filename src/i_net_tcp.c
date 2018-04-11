@@ -179,7 +179,13 @@ int create_tcp_channel(uv_loop_t *uvloop, server_worker_t *me,
 
 static void *on_result(uv_callback_t *handle, void *result)
 {
-	prlog(LOGD, "The result is %s\n", (char *)result);
+	async_cmd_t *cmd = result;
+
+	prlog(LOGD, "The result is %s", (char *)cmd->resp);
+
+	ifree(cmd->resp);
+	ifree(cmd);
+	return NULL;
 }
 
 int setup_tcp_server(server_t *server, uv_loop_t *uvloop)
