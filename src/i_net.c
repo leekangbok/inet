@@ -25,7 +25,7 @@ static pthread_mutex_t init_lock;
 static pthread_cond_t init_cond;
 
 unsigned long call_next = 0;
-#define NUM_WORKERS 8
+#define NUM_WORKERS 4
 
 static server_worker_t workers[NUM_WORKERS];
 
@@ -190,7 +190,7 @@ static code_t def_outbound_handler(channelhandlerctx_t *ctx, void *data,
 static code_t def_inbound_handler(channelhandlerctx_t *ctx, void *data,
 								  ssize_t datalen)
 {
-	if (datalen > 0)
+	if (data && datalen > 0)
 		ifree(data);
 	return SUCCESS;
 }
