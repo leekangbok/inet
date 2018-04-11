@@ -96,7 +96,7 @@ static void on_connect_client(uv_stream_t *stream, int status)
 	uv_fileno((uv_handle_t *)&cmd->new_connection.tcp, &client_fd);
 	cmd->new_connection.fd = dup(client_fd);
 	cmd->new_connection.server = server;
-
+	cmd->server = server;
 	uv_close((uv_handle_t *)&cmd->new_connection.tcp, origin_conn_closed);
 }
 
@@ -177,6 +177,11 @@ int create_tcp_channel(uv_loop_t *uvloop, server_worker_t *me,
 	return 1;
 }
 
+static void *on_result(uv_callback_t *handle, void *result)
+{
+	prlog(LOGD, "The result is %s\n", (char *)result);
+}
+
 int setup_tcp_server(server_t *server, uv_loop_t *uvloop)
 {
 	server->uvloop = uvloop;
@@ -190,6 +195,8 @@ int setup_tcp_server(server_t *server, uv_loop_t *uvloop)
 		server->config.setup_server(server);
 
 	assert(0 == uv_listen(&server->h.stream, 128, on_connect_client));
+
+	uv_callback_init(uvloop, &server->result_async_cmd, on_result, UV_DEFAULT);
 
 	server->servertype = SERVERTYPE_TCP;
 

@@ -3,6 +3,7 @@
 
 #include <uv.h>
 #include <llist.h>
+#include <uv_callback.h>
 
 #undef containerof
 #define containerof(ptr, type, field) \
@@ -95,7 +96,6 @@ typedef struct {
 #define ACMD_NEW_DATAGRAM 2
 
 typedef struct {
-	struct ll_head ll;
 	int cmd;
 	union {
 		struct {
@@ -111,13 +111,12 @@ typedef struct {
 			ssize_t datalen;
 		} new_datagram;
 	};
+	server_t *server;
 } async_cmd_t;
 
 struct server_worker_ {
 	int index;
-	pthread_spinlock_t cmd_spinlock;
-	struct ll_head new_cmds;
-	uv_async_t cmd_handle;
+	uv_callback_t async_cmd;
 	uv_thread_t thread_id;
 };
 
@@ -207,6 +206,7 @@ struct server_ {
 		struct sockaddr_in addr4;
 		struct sockaddr_in6 addr6;
 	} addr;
+	uv_callback_t result_async_cmd;
 #define SERVERTYPE_TCP 1
 #define SERVERTYPE_UDP 2
 	int servertype;

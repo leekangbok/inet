@@ -35,7 +35,7 @@ EXTRA_CFLAGS           =
 EXTRA_LDFLAGS          = -lpthread -luv -ljansson
 
 # Specify the include dirs, e.g. "-I/usr/include/mysql -I./include -I/usr/include -I/usr/local/include".
-INCLUDE                = -I. -Iinclude -Isample_app
+INCLUDE                = -I. -Iinclude -Isample_app -Iuv_extension
 
 # The C Preprocessor options (notice here "CPP" does not mean "C++"; man cpp for more info.). Actually $(INCLUDE) is included.
 CPPFLAGS               = -Wall -Wextra  -Wno-unused-parameter # helpful for writing better code (behavior-related)

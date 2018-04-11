@@ -522,38 +522,24 @@ void notify_async_cmd(async_cmd_t *cmd)
 	unsigned long idx = ++call_next % NUM_WORKERS;
 	server_worker_t *me = &workers[idx];
 
-	pthread_spin_lock(&me->cmd_spinlock);
-	ll_add_tail(&cmd->ll, &me->new_cmds);
-	pthread_spin_unlock(&me->cmd_spinlock);
-
-	uv_async_send(&me->cmd_handle);
+	uv_callback_fire(&me->async_cmd, cmd, &cmd->server->result_async_cmd);
 }
 
-static void consume_async_cmd(uv_async_t *handle)
+static void *consume_async_cmd(uv_callback_t *handle, void *data)
 {
-	LL_HEAD(tmp_list);
-	server_worker_t *me = containerof(handle,
-									  server_worker_t,
-									  cmd_handle);
-	async_cmd_t *cmd, *_cmd;
+	server_worker_t *me = containerof(handle, server_worker_t, async_cmd);
+	async_cmd_t *cmd = data;
 
-	pthread_spin_lock(&me->cmd_spinlock);
-	ll_splice(&me->new_cmds, &tmp_list);
-	INIT_LL_HEAD(&me->new_cmds);
-	pthread_spin_unlock(&me->cmd_spinlock);
-
-	ll_for_each_entry_safe(cmd, _cmd, &tmp_list, ll) {
-		switch (cmd->cmd) {
-		case ACMD_NEW_TCP_CONN:
-			create_tcp_channel(handle->loop, me, cmd->new_connection.server,
-							   cmd->new_connection.fd);
-			break;
-		default:
-			break;
-		}
-		ll_del(&cmd->ll);
-		ifree(cmd);
+	switch (cmd->cmd) {
+	case ACMD_NEW_TCP_CONN:
+		create_tcp_channel(((uv_async_t *)handle)->loop, me,
+						   cmd->new_connection.server, cmd->new_connection.fd);
+		break;
+	default:
+		break;
 	}
+	ifree(cmd);
+	return "success";
 }
 
 static void worker_thread_f(void *arg)
@@ -562,7 +548,8 @@ static void worker_thread_f(void *arg)
 	uv_loop_t *uvloop;
 
 	uvloop = uv_loop_new();
-	uv_async_init(uvloop, &me->cmd_handle, consume_async_cmd);
+
+	uv_callback_init(uvloop, &me->async_cmd, consume_async_cmd, UV_DEFAULT);
 
 	pthread_mutex_lock(&init_lock);
 	init_count++;
@@ -579,8 +566,6 @@ static void start_workers(void)
 	for (i = 0; i < NUM_WORKERS; i++) {
 		server_worker_t *worker = &workers[i];
 		worker->index = i;
-		pthread_spin_init(&worker->cmd_spinlock, PTHREAD_PROCESS_PRIVATE);
-		INIT_LL_HEAD(&worker->new_cmds);
 		uv_thread_create(&worker->thread_id, worker_thread_f, worker);
 	}
 }
