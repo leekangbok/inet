@@ -28,9 +28,7 @@ typedef struct server_worker_ server_worker_t;
 typedef struct callback_ callback_t;
 typedef struct calllater_ calllater_t;
 typedef struct buf_ buf_t;
-
-typedef code_t (*channelhandler_f)(channelhandlerctx_t *ctx, void *data,
-								   ssize_t datalen);
+typedef code_t (*channelhandler_f)(channelhandlerctx_t *ctx, void *data, ssize_t datalen);
 typedef code_t (*call_later)(calllater_t *cl, void *data, int status);
 typedef void (*data_destroy_f)(void *data);
 
@@ -54,7 +52,6 @@ typedef struct {
 	void *data;
 	ssize_t datalen;
 	uv_buf_t buf;
-	const struct sockaddr *addr;
 	union {
 		uv_req_t req;
 		uv_write_t write;
@@ -212,32 +209,24 @@ struct server_ {
 	data_destroy_f data_destroy;
 };
 
-calllater_t *add_calllater(calllater_t *cl, call_later f, void *data,
-						   data_destroy_f df);
+calllater_t *add_calllater(calllater_t *cl, call_later f, void *data, data_destroy_f df);
 void run_calllater(calllater_t *cl, int status);
 calllater_t *create_write_req(void *data, ssize_t datalen);
-void queue_work(channelhandlerctx_t *ctx, void *data, call_later on_work,
-				call_later after_work);
-void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size,
-				 uv_buf_t *buf);
+void queue_work(channelhandlerctx_t *ctx, void *data, call_later on_work, call_later after_work);
+void uvbuf_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
 void notify_async_cmd(async_cmd_t *cmd);
 code_t callup(channelhandlerctx_t *ctx, void *data, ssize_t datalen);
-code_t callup_channel(channel_t *channel, int event,
-					  void *data, ssize_t datalen);
-code_t callup_context(channelhandlerctx_t *ctx, int event,
-					  void *data, ssize_t datalen);
+code_t callup_channel(channel_t *channel, int event, void *data, ssize_t datalen);
+code_t callup_context(channelhandlerctx_t *ctx, int event, void *data, ssize_t datalen);
 channelhandler_t *find_channelhandler(channel_t *channel, const char *name);
-code_t add_channelhandlers(channel_t *channel, channelhandlers_t handlers[],
-						   size_t numofhandlers);
+code_t add_channelhandlers(channel_t *channel, channelhandlers_t handlers[], size_t numofhandlers);
 int channel_fd(channel_t *channel);
 channel_t *create_channel(void *data, data_destroy_f data_destroy);
 channel_t *hold_channel(channel_t *channel);
 void release_channel(channel_t *channel);
-code_t set_channel_data(channel_t *channel,
-						void *data, data_destroy_f data_destroy);
+code_t set_channel_data(channel_t *channel, void *data, data_destroy_f data_destroy);
 code_t add_server(server_config_t *config);
-code_t set_server_data(server_t *server,
-					   void *data, data_destroy_f data_destroy);
+code_t set_server_data(server_t *server, void *data, data_destroy_f data_destroy);
 int server_fd(server_t *server);
 code_t start_server(void);
 
